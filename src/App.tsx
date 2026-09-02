@@ -19,46 +19,78 @@ import { SecurityVerificationModal } from './components/security/SecurityVerific
 import { ConnectionStatus } from './components/device/ConnectionStatus';
 import { fetchUserOperationalSectorsState } from './services/userSectorService';
 import { OperationalSectorId } from './domain/operationalSectors';
+import { getNovoHotelOperationalRouteForSectors } from './navigation/novohotelRoutes';
 import { resolveWorkspaceForUserAndSectors } from './workspace-engine/registry';
 import { WorkspaceRuntime } from './workspace-engine/WorkspaceRuntime';
 import { DEFAULT_WORKSPACE_HOTEL_ID, hydrateWorkspaceOverridesFromSupabase, subscribeWorkspaceConfig } from './workspace-engine/workspaceConfigStore';
 
 const AuthenticatedWorkspaceRouter: React.FC = () => {
-  const { currentUser, hotelConfig } = useHotel();
+  const { currentUser, hotelConfig, setAdminActiveTab } = useHotel();
   const [sectorIds, setSectorIds] = useState<OperationalSectorId[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [sectorsLoading, setSectorsLoading] = useState(true);
+  const [workspaceReady, setWorkspaceReady] = useState(false);
   const [, setWorkspaceRevision] = useState(0);
   const role = currentUser?.tipo_usuario || '';
   const management = role === 'admin' || role === 'gerente';
   const hotelId = hotelConfig?.id || DEFAULT_WORKSPACE_HOTEL_ID;
+  const stableOperationalRoute = !management && !sectorsLoading
+    ? getNovoHotelOperationalRouteForSectors(sectorIds)
+    : null;
 
   useEffect(() => {
     let cancelled = false;
     if (!currentUser?.id || management) {
       setSectorIds([]);
-      setLoading(false);
+      setSectorsLoading(false);
       return () => { cancelled = true; };
     }
 
-    setLoading(true);
-    void Promise.all([
-      fetchUserOperationalSectorsState(currentUser.id),
-      hydrateWorkspaceOverridesFromSupabase(hotelId),
-    ]).then(([state]) => {
+    setSectorsLoading(true);
+    void fetchUserOperationalSectorsState(currentUser.id).then(state => {
       if (cancelled) return;
       setSectorIds(state.available ? state.assignment.sectorIds : []);
-      setLoading(false);
+      setSectorsLoading(false);
+    }).catch(() => {
+      if (cancelled) return;
+      setSectorIds([]);
+      setSectorsLoading(false);
     });
     return () => { cancelled = true; };
-  }, [currentUser?.id, management, hotelId]);
+  }, [currentUser?.id, management]);
+
+  useEffect(() => {
+    if (!stableOperationalRoute?.legacyAdminTab) return;
+    setAdminActiveTab(stableOperationalRoute.legacyAdminTab);
+  }, [stableOperationalRoute?.legacyAdminTab, setAdminActiveTab]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (management || sectorsLoading || stableOperationalRoute) {
+      setWorkspaceReady(true);
+      return () => { cancelled = true; };
+    }
+
+    setWorkspaceReady(false);
+    void hydrateWorkspaceOverridesFromSupabase(hotelId).then(() => {
+      if (!cancelled) setWorkspaceReady(true);
+    }).catch(() => {
+      if (!cancelled) setWorkspaceReady(true);
+    });
+    return () => { cancelled = true; };
+  }, [management, sectorsLoading, stableOperationalRoute?.id, hotelId]);
 
   useEffect(() => subscribeWorkspaceConfig(() => {
     setWorkspaceRevision(current => current + 1);
   }), []);
 
   if (management) return <AdminLayout />;
-  if (loading) return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-600 text-sm font-bold">Carregando ambiente operacional…</div>;
+  if (sectorsLoading) return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-600 text-sm font-bold">Carregando ambiente operacional…</div>;
 
+  // Recepção e Cozinha já possuem rotas/telas diretas no NovoHotel e não precisam
+  // carregar a Fábrica de Workspaces para iniciar a sessão operacional.
+  if (stableOperationalRoute?.legacyAdminTab) return <AdminLayout />;
+
+  if (!workspaceReady) return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-600 text-sm font-bold">Carregando compatibilidade do ambiente…</div>;
   const workspace = resolveWorkspaceForUserAndSectors(currentUser?.id, sectorIds, hotelId);
   if (workspace) return <WorkspaceRuntime definition={workspace} />;
   return <AdminLayout />;
