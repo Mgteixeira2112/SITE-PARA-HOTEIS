@@ -70,5 +70,8 @@ export const getNovoHotelRoute = (id: NovoHotelRouteId) =>
 export const getNovoHotelRouteByPath = (path: string) =>
   NOVOHOTEL_ROUTES.find(route => route.path === path) || null;
 
+export const getNovoHotelRouteByLegacyAdminTab = (tab: AdminTab) =>
+  NOVOHOTEL_ROUTES.find(route => route.legacyAdminTab === tab) || null;
+
 export const getNovoHotelRoutesByGroup = (group: NovoHotelRouteGroup) =>
   NOVOHOTEL_ROUTES.filter(route => route.group === group);
