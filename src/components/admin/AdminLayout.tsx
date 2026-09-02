@@ -36,6 +36,7 @@ import {
 } from '../../navigation/novohotelRoutes';
 import { getCompatibilityTabForNovoHotelRoute } from '../../navigation/novoHotelLegacyNavigationBridge';
 import { canAccessNovoHotelRoute } from '../../navigation/novoHotelRouteAccess';
+import { useNovoHotelCanonicalRouteAccess } from '../../navigation/useNovoHotelCanonicalRouteAccess';
 import { useNovoHotelNavigation } from '../../navigation/useNovoHotelNavigation';
 
 type NavContextId = NovoHotelRouteGroup;
@@ -85,6 +86,7 @@ export const AdminLayout: React.FC = () => {
     navigateToRoute,
     navigateToCompatibilityTab,
   } = useNovoHotelNavigation();
+  const { getCanonicalDecision } = useNovoHotelCanonicalRouteAccess();
   const theme = getTheme(hotelConfig?.tema_cor);
   const fontClass = getFontFamilyClass(hotelConfig?.tipografia);
   const checkinsTodayCount = reservations.filter((r) => r.status === 'confirmada').length;
@@ -148,6 +150,12 @@ export const AdminLayout: React.FC = () => {
   const userRole = currentUser?.tipo_usuario || 'recepcionista';
   const isAllowed = (item: NavItemConfig) => {
     if (item.id === 'command_center') return ['admin', 'gerente'].includes(userRole);
+
+    const canonicalDecision = getCanonicalDecision(item.id);
+    if (canonicalDecision?.source === 'canonical') {
+      return canonicalDecision.allowed === true;
+    }
+
     return canAccessNovoHotelRoute(item.id, userRole, hasTabAccess);
   };
 
