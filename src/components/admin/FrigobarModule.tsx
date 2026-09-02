@@ -6,6 +6,7 @@ import {
   type MinibarRestockSource,
   type MinibarRoomSnapshot,
 } from '../../frigobar-core';
+import { useNovoHotelTenant } from '../../tenant/NovoHotelTenantContext';
 
 const money = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0));
@@ -14,8 +15,9 @@ const operationKey = (prefix: string) =>
   `${prefix}:${typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
 
 export const FrigobarModule: React.FC = () => {
-  const { hotelConfig, rooms, reservations, guests } = useHotel();
-  const hotelId = hotelConfig.id || '';
+  const { rooms, reservations, guests } = useHotel();
+  const { tenant, loading: tenantLoading } = useNovoHotelTenant();
+  const hotelId = tenant?.hotelId || '';
   const activeReservations = useMemo(
     () => reservations.filter(item => item.status === 'checkin_realizado' && item.quarto_id),
     [reservations],
@@ -140,7 +142,7 @@ export const FrigobarModule: React.FC = () => {
         </div>
       </header>
 
-      {!hotelId && <div className="rounded-2xl bg-amber-50 p-4 text-xs font-bold text-amber-800">O hotel ativo ainda não possui ID Supabase disponível. Sincronize a configuração antes de operar o Frigobar.</div>}
+      {!tenantLoading && !hotelId && <div className="rounded-2xl bg-amber-50 p-4 text-xs font-bold text-amber-800">O hotel ativo ainda não possui ID Supabase disponível. Sincronize a configuração antes de operar o Frigobar.</div>}
       {!activeReservations.length && <div className="rounded-2xl bg-slate-50 p-8 text-center text-sm text-slate-500">Nenhuma hospedagem ativa para operação de Frigobar.</div>}
       {error && <div className="rounded-2xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</div>}
       {notice && <div className="rounded-2xl bg-emerald-50 p-3 text-xs font-bold text-emerald-700">{notice}</div>}
