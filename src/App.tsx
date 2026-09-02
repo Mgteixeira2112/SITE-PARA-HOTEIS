@@ -84,9 +84,15 @@ const AuthenticatedWorkspaceRouter: React.FC = () => {
     return () => { cancelled = true; };
   }, [management, sectorsLoading, stableOperationalRoute?.id, hotelId]);
 
-  useEffect(() => subscribeWorkspaceConfig(() => {
-    setWorkspaceRevision(current => current + 1);
-  }), []);
+  // A configuração dinâmica da Fábrica só precisa invalidar o runtime quando
+  // este router realmente caiu no caminho legado de compatibilidade. Áreas que
+  // já possuem rota estável não assinam mais eventos globais de Workspace.
+  useEffect(() => {
+    if (management || sectorsLoading || stableOperationalRoute) return;
+    return subscribeWorkspaceConfig(() => {
+      setWorkspaceRevision(current => current + 1);
+    });
+  }, [management, sectorsLoading, stableOperationalRoute?.id]);
 
   if (management) return <AdminLayout />;
   if (sectorsLoading) return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-600 text-sm font-bold">Carregando ambiente operacional…</div>;
