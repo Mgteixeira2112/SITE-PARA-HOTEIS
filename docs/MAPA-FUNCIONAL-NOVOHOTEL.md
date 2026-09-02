@@ -35,10 +35,10 @@ Nenhuma remoção da Fábrica de Workspaces, de adapters operacionais ou de cont
 
 | Função | Tela atual | Componente/entrada | Hook / Service | Repository / Core | Tabela / Migration verificada | Fonte de verdade atual | Destino NovoHotel |
 |---|---|---|---|---|---|---|---|
-| Reservas | Mapa de Reservas | `ReservationsModule` + `BookingModal` | ações do `HotelContext`; utilitário de disponibilidade | serviços Supabase base; regras de disponibilidade existentes | `reservas`, `hospedes`, `quartos`; migrations versionadas | Supabase sincronizado pelo contexto, com camada local de compatibilidade | `/app/reservas` |
-| Recepção / estadia | Check-in / Out + ambiente de Recepção | `CheckInOutModule`; `ReceptionWorkspaceShared`; `ReceptionRoomsKanban`; `ReceptionKanbanBoard` | `receptionGuestStayService`; `receptionRoomKanbanService` | contratos de recepção + engines já existentes | rastreamento detalhado de migrations ainda em inventário | serviços/regras atuais de recepção; não duplicar | `/app/recepcao` |
-| Quartos e tarifas | Quartos & Tarifas | `RoomsModule`; componentes da Recepção para projeção operacional | ações de quartos no `HotelContext`; `availabilityService` | camada Supabase base + projeções de recepção | `quartos`, `tipos_quarto`, `bloqueios` | Supabase + regras existentes | `/app/quartos` |
-| Hóspedes / CRM | Hóspedes & CRM | `GuestsModule` | ações de hóspedes no `HotelContext`; `receptionGuestStayService` no contexto de estadia | Supabase base + serviços de recepção | `hospedes` | Supabase | `/app/hospedes` |
+| Reservas | Mapa de Reservas + motor público | `ReservationsModule` + `BookingModal` | ações do `HotelContext`; `upsertReservationToSupabase`; utilitário de disponibilidade | Supabase base + `kanbanV2` para projeção | `reservas`, `hospedes`, `quartos`; `007_reservation_atomic.sql`; `008_reservation_rpc.sql` | fluxo legado/UI: estado local sincronizado e Supabase; proteção transacional já existe no banco, mas o `HotelContext.createReservation` ainda grava via upsert direto | `/app/reservas`; posteriormente alinhar criação ao RPC transacional sem recriar o motor |
+| Recepção / estadia | Check-in / Out + ambiente de Recepção | `CheckInOutModule`; `ReceptionWorkspaceShared`; `ReceptionRoomsKanban`; `ReceptionKanbanBoard` | `HotelContext.updateReservationStatus`; `receptionGuestStayService`; `receptionRoomKanbanService` | Supabase + Kanban oficial | `reservas`, `hospedes`, `quartos`, `kanban_cards`; RPCs `reception_create_reservation_for_guest`, `reception_room_direct_checkin`, `reception_find_available_rooms`, `reception_create_reservation_with_room` são referenciadas pelo cliente; definição SQL ainda não localizada no diretório versionado | adapter de recepção usa Supabase/RPC diretamente; `CheckInOutModule` legado passa pelo `HotelContext` | `/app/recepcao`; consolidar as duas entradas reutilizando os serviços existentes |
+| Quartos e tarifas | Quartos & Tarifas + projeção no Kanban de Recepção | `RoomsModule`; `ReceptionRoomsKanban` | ações de quartos no `HotelContext`; `receptionRoomKanbanService`; `availabilityService` | Supabase + `kanbanV2`/governança do card | `quartos`, `tipos_quarto`, `bloqueios`; `007`/`008` também dependem de `quartos` para disponibilidade/reserva | `quartos` é a fonte operacional para status no fluxo de Recepção; `HotelContext` mantém cópia local sincronizada e grava Supabase | `/app/quartos` |
+| Hóspedes / CRM | Hóspedes & CRM + cadastro na Recepção | `GuestsModule`; formulários da Recepção | ações de hóspedes no `HotelContext`; `receptionGuestStayService` | Supabase | `hospedes`; vínculo com `reservas` | Supabase é a persistência compartilhada; `GuestsModule` usa estado local sincronizado, enquanto Recepção faz insert/update direto em `hospedes` | `/app/hospedes` |
 | Governança | Centro operacional / Kanban de governança | `GovernancaWorkspace`; `GovernancaKanbanBoard`; `GovernancaCardDetailModal`; `GovernancaDemandModal` | `governancaDemandService`; `governanceService`; `kanbanCardGovernanceService` | Kanban e regras operacionais existentes | migrations específicas ainda em inventário | serviços de governança/Kanban existentes | `/app/governanca` |
 | Manutenção | Kanban operacional / quarto | atualmente acessível por composição operacional e widgets | `governanceService`/Kanban e serviços associados a manutenção | Kanban + domínio operacional | migrations específicas ainda em inventário | motor Kanban/serviços existentes | `/app/manutencao` |
 | Kanban | Kanban Operacional | `KanbanWorkspaceModule`; bridges e boards especializados | `kanbanV2`; `kanbanCardGovernanceService`; `kanbanLocalBootstrapService` e serviços associados | motor Kanban existente | migrations Kanban dentro da série versionada; rastreio individual pendente | Kanban oficial | `/app/kanban` e views especializadas por função |
@@ -53,6 +53,49 @@ Nenhuma remoção da Fábrica de Workspaces, de adapters operacionais ou de cont
 | Site público | Landing + quartos + reserva | `Navbar`, `HeroSection`, `RoomsShowcase`, seções institucionais, `BookingModal` | `HotelContext`/disponibilidade na configuração atual | serviços existentes | `hotel_config`, `quartos`, `tipos_quarto`, `reservas`, `hospedes` | dados do hotel + motor de reservas | `/` público, publicável e desacoplado da navegação SaaS |
 | Workspace / Fábrica | Editor de Workspaces | `WorkspaceEditorModule` | `workspaceConfigStore` e Workspace Engine | `workspace-engine` | persistência de overrides já existente; rastreio completo pendente | compatibilidade visual atual | manter em `/app/sistema/workspaces` durante a transformação; remover da rota crítica somente após dependências mapeadas |
 | Central Hotel OS | Central Hotel OS | `HotelOSCommandCenter` | serviços de eventos/saúde/integrações existentes | infraestrutura atual | rastreio pendente | serviços existentes | manter como ferramenta administrativa/auditoria, não como camada obrigatória de navegação |
+
+## Cluster 1 — Reservas, Recepção, Quartos e Hóspedes
+
+### Reservas
+
+O caminho atualmente usado por `HotelContext.createReservation` é híbrido: cria/localiza o hóspede, calcula valores, cria o objeto de reserva no estado React, chama `upsertReservationToSupabase` de forma assíncrona e projeta a reserva para `kanbanV2`. Portanto, a interface ainda pode refletir a reserva antes da confirmação do banco.
+
+Ao mesmo tempo, o banco já contém uma base mais segura. `007_reservation_atomic.sql` cria `validar_disponibilidade_quarto`, verificando autorização, intervalo e conflitos de reservas por hotel/quarto. `008_reservation_rpc.sql` cria `criar_reserva_segura`, que bloqueia o quarto, valida capacidade e disponibilidade e insere a reserva na mesma transação.
+
+**Decisão de transformação:** não criar outro motor de reservas. A futura estabilização de `/app/reservas` deve reutilizar a tela atual e convergir a operação de criação para o contrato transacional já existente, preservando os campos de negócio que hoje são montados pelo `HotelContext`.
+
+### Recepção e estadia
+
+Existem dois caminhos que precisam ser reunidos, não reescritos:
+
+- `CheckInOutModule` usa `HotelContext.updateReservationStatus`, que também altera o status do quarto e sincroniza o Kanban.
+- O adapter especializado `receptionGuestStayService` acessa Supabase diretamente e referencia RPCs próprias para criação de reserva, check-in direto, busca de quartos disponíveis e criação com esquema de cama.
+
+O `receptionRoomKanbanService` confirma explicitamente o desenho correto para estado de quarto: resolve o quarto vinculado, move o card pelo motor Kanban e persiste `quartos.status`; o próprio serviço declara `quartos` como fonte operacional e o Kanban como projeção.
+
+**Lacuna registrada:** as quatro RPCs `reception_*` referenciadas por `receptionGuestStayService` não foram localizadas pelo inventário no diretório de migrations versionadas consultado. Elas não serão assumidas como contrato migrável até a definição SQL ser encontrada ou regularizada em fase posterior.
+
+### Quartos
+
+`RoomsModule` já é uma tela direta e não depende de Workspace. Suas operações chamam `addRoom`, `updateRoom`, `deleteRoom` e `setRoomStatus` do `HotelContext`. Essas ações atualizam o estado local e persistem em Supabase; mudanças de status também são projetadas para `kanbanV2`.
+
+No fluxo especializado da Recepção, `receptionRoomKanbanService` faz o inverso de forma mais rigorosa: persiste `quartos.status` no Supabase e depois confirma o card do board de quartos. Para o NovoHotel, o contrato canônico deve continuar centrado em `quartos`, com Kanban como projeção operacional.
+
+### Hóspedes
+
+`GuestsModule` também já é uma tela direta. Ele consome `guests` e `reservations` do `HotelContext` e usa `addGuest`, `updateGuest` e `deleteGuest`. O contexto mantém cópia local e chama os métodos Supabase correspondentes.
+
+A Recepção possui caminho direto por `receptionGuestStayService.createGuest/updateGuest`, que grava `hospedes` no Supabase sem depender do `HotelContext`. Logo, o dado compartilhado é a tabela `hospedes`; o estado do contexto é uma camada de apresentação/sincronização e não deve virar um segundo domínio no NovoHotel.
+
+### Fonte de verdade e compatibilidade neste cluster
+
+- **Supabase:** persistência compartilhada de `reservas`, `quartos`, `tipos_quarto`, `hospedes` e `bloqueios`.
+- **Estado React do `HotelContext`:** cache/estado de interface inicializado também por `localStorage`, sincronizado da nuvem e atualizado por realtime.
+- **`localStorage`:** fallback/compatibilidade do frontend; não é a fonte de verdade desejada para o SaaS final.
+- **Kanban:** projeção operacional de reservas/quartos e não substituto da entidade de origem.
+- **Workspace:** camada de apresentação para partes da Recepção; não é fonte de verdade de reservas, quartos ou hóspedes.
+
+Com este cluster mapeado, as telas `ReservationsModule`, `CheckInOutModule`, `RoomsModule` e `GuestsModule` podem ser preservadas na migração para rotas estáveis. A alteração de rota só deve ocorrer depois que os clusters seguintes também tiverem suas dependências críticas registradas, evitando cortar integrações indiretas do Kanban/Governança.
 
 ## Constatações que orientam a simplificação
 
@@ -95,5 +138,7 @@ Antes da primeira troca de navegação, fechar para cada função:
 - dependências de Workspace/Widget que impedem acesso direto;
 - regras RBAC usadas pelo módulo;
 - operações críticas e testes que protegem o fluxo.
+
+Próximo cluster: **Governança → Manutenção → Kanban**. Depois dele, seguir para **PDV → KDS → Frigobar → Financeiro** e então **Equipe/RBAC → Site público → Workspace/Fábrica**.
 
 A primeira mudança estrutural posterior ao inventário deve ser pequena: criar um contrato único de rotas/menu do NovoHotel reutilizando os componentes atuais e mantendo o roteamento por Workspace como fallback durante a migração.
