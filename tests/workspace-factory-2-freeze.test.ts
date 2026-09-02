@@ -52,9 +52,9 @@ test('Freeze 2.0: Workspace Financeiro de compatibilidade mantém composição c
 });
 
 test('Freeze 2.0: Financeiro administrativo entra pela tela direta do NovoHotel', () => {
-  assert.match(adminLayout, /<NovoHotelModuleRenderer activeTab=\{activeTab\} \/>/);
+  assert.match(adminLayout, /<NovoHotelModuleRenderer routeId=\{activeRouteId\} activeTab=\{activeTab\} \/>/);
   assert.match(moduleRenderer, /import \{ FinancialModule \} from '\.\/FinancialModule';/);
-  assert.match(moduleRenderer, /activeTab === 'financial' && <FinancialModule \/>/);
+  assert.match(moduleRenderer, /routeId === 'financeiro' && <FinancialModule \/>/);
   assert.doesNotMatch(adminLayout, /getWorkspaceDefinition\('workspace-financeiro'/);
   assert.doesNotMatch(moduleRenderer, /getWorkspaceDefinition\('workspace-financeiro'/);
   assert.doesNotMatch(adminLayout, /<WidgetDrivenWorkspace definition=\{financialWorkspace\}/);
@@ -79,7 +79,7 @@ test('Freeze 2.0: Fábrica permanece acessível pela rota técnica do NovoHotel'
   assert.match(routes, /label: 'Fábrica de Workspaces'/);
   assert.match(routes, /managementOnly: true, technical: true/);
   assert.match(adminLayout, /route\.id === 'workspaces' \? 'workspace_editor'/);
-  assert.match(moduleRenderer, /activeTab === 'workspace_editor' && <WorkspaceEditorModule \/>/);
+  assert.match(moduleRenderer, /routeId === 'workspaces' && <WorkspaceEditorModule \/>/);
 });
 
 test('Freeze 2.0: Desktop, Mobile e KDS continuam resolvidos no runtime único de compatibilidade', () => {
