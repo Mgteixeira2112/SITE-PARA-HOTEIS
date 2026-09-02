@@ -388,7 +388,7 @@ test('33. migrations: idempotência de migrações DDL e DML com políticas adit
 
 // 34. Testes Automatizados
 test('34. testes automatizados: validação do pipeline de CI com lockfile frozen', () => {
-  const workflow = read('.github/workflows/hotel-os-validation.yml');
+  const workflow = read('.github/workflows/novohotel-quality-gate.yml');
   assert.match(workflow, /bun install --frozen-lockfile/);
 });
 
