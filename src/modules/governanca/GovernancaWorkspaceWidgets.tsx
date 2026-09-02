@@ -1,11 +1,11 @@
 import React from 'react';
 import { AlertTriangle, ClipboardCheck, Sparkles, UserRoundCheck, Users } from 'lucide-react';
-import { WorkspaceWidgetDefinition } from '../../workspace-engine/types';
 import { KanbanV2Card } from '../../services/kanbanV2';
+import { GovernancaDirectWidgetDefinition } from './governancaDirectDefinition';
 import { buildGovernancaWorkspaceAlerts, GovernancaStageFilter } from './governancaWorkspaceModel';
 
 export const GovernancaAlertsWidget: React.FC<{
-  widget: WorkspaceWidgetDefinition;
+  widget: GovernancaDirectWidgetDefinition;
   cards: KanbanV2Card[];
   onStageFilter: (stage: GovernancaStageFilter) => void;
 }> = ({ widget, cards, onStageFilter }) => {
@@ -40,7 +40,7 @@ export const GovernancaAlertsWidget: React.FC<{
 };
 
 export const GovernancaQuickActionsWidget: React.FC<{
-  widget: WorkspaceWidgetDefinition;
+  widget: GovernancaDirectWidgetDefinition;
   onShowMine: () => void;
   onShowSector: () => void;
   onStageFilter: (stage: GovernancaStageFilter) => void;
