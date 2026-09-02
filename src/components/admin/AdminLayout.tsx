@@ -32,6 +32,7 @@ import { AdminTab } from '../../types';
 import { getTheme, getFontFamilyClass } from '../../utils/themeHelper';
 import {
   NOVOHOTEL_ROUTES,
+  getNovoHotelRouteByLegacyAdminTab,
   type NovoHotelRouteGroup,
   type NovoHotelRouteId,
 } from '../../navigation/novohotelRoutes';
@@ -81,6 +82,9 @@ export const AdminLayout: React.FC = () => {
   const activeUsersCount = users.filter(u => u.ativo).length;
   const pendingKanbanCount = 0;
   const activeTab = adminActiveTab as ExtendedAdminTab;
+  const activeRouteId: NovoHotelRouteId | null = activeTab === 'workspace_editor'
+    ? 'workspaces'
+    : getNovoHotelRouteByLegacyAdminTab(activeTab as AdminTab)?.id || null;
 
   const navItems: NavItemConfig[] = useMemo(() => {
     const routeItems = NOVOHOTEL_ROUTES
@@ -124,11 +128,15 @@ export const AdminLayout: React.FC = () => {
     { id: 'sistema', label: 'Sistema', icon: Sliders },
   ];
 
-  const currentTab = navItems.find(item => item.id === activeTab) || navItems[0];
+  // A identidade visual da navegação já segue a rota canônica do NovoHotel.
+  // A aba legada permanece apenas como ponte temporária para o estado/contexto existente.
+  const currentTab = navItems.find(item => item.routeId === activeRouteId)
+    || navItems.find(item => item.id === activeTab)
+    || navItems[0];
   const [activeContext, setActiveContext] = useState<NavContextId>(currentTab.context);
   React.useEffect(() => {
     if (currentTab.context !== activeContext) setActiveContext(currentTab.context);
-  }, [activeTab, currentTab.context]);
+  }, [activeTab, activeRouteId, currentTab.context]);
 
   const userRole = currentUser?.tipo_usuario || 'recepcionista';
   const isAllowed = (item: NavItemConfig) => {
@@ -177,7 +185,7 @@ export const AdminLayout: React.FC = () => {
           <nav className="flex items-center gap-1.5 min-w-max">
             {contextItems.map(item => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = item.routeId ? item.routeId === activeRouteId : activeTab === item.id;
               const allowed = isAllowed(item);
               return <button
                 key={`${item.routeId || 'compat'}:${item.id}`}
