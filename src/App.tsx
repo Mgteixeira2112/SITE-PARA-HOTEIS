@@ -14,15 +14,20 @@ import { Footer } from './components/landing/Footer';
 import { FloatingWhatsapp } from './components/landing/FloatingWhatsapp';
 import { BookingModal } from './components/booking/BookingModal';
 import { AdminLayout } from './components/admin/AdminLayout';
+import { MaintenanceModule } from './components/admin/MaintenanceModule';
 import { AdminLogin } from './components/auth/AdminLogin';
 import { SecurityVerificationModal } from './components/security/SecurityVerificationModal';
 import { ConnectionStatus } from './components/device/ConnectionStatus';
+import { GovernancaWorkspace } from './modules/governanca/GovernancaWorkspace';
 import { fetchUserOperationalSectorsState } from './services/userSectorService';
 import { OperationalSectorId } from './domain/operationalSectors';
 import { getNovoHotelOperationalRouteForSectors } from './navigation/novohotelRoutes';
 import { resolveWorkspaceForUserAndSectors } from './workspace-engine/registry';
 import { WorkspaceRuntime } from './workspace-engine/WorkspaceRuntime';
+import { createOfficialWorkspaceDefinition } from './workspace-engine/workspaceOfficialFactory';
 import { DEFAULT_WORKSPACE_HOTEL_ID, hydrateWorkspaceOverridesFromSupabase, subscribeWorkspaceConfig } from './workspace-engine/workspaceConfigStore';
+
+const governanceDirectDefinition = createOfficialWorkspaceDefinition('workspace-governanca');
 
 const AuthenticatedWorkspaceRouter: React.FC = () => {
   const { currentUser, hotelConfig, setAdminActiveTab } = useHotel();
@@ -86,8 +91,11 @@ const AuthenticatedWorkspaceRouter: React.FC = () => {
   if (management) return <AdminLayout />;
   if (sectorsLoading) return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-600 text-sm font-bold">Carregando ambiente operacional…</div>;
 
-  // Recepção e Cozinha já possuem rotas/telas diretas no NovoHotel e não precisam
-  // carregar a Fábrica de Workspaces para iniciar a sessão operacional.
+  // Áreas com tela operacional direta não precisam hidratar a Fábrica de
+  // Workspaces para iniciar a sessão. Recepção/Cozinha usam módulos do
+  // AdminLayout; Governança e Manutenção usam telas operacionais dedicadas.
+  if (stableOperationalRoute?.id === 'governanca') return <GovernancaWorkspace definition={governanceDirectDefinition} />;
+  if (stableOperationalRoute?.id === 'manutencao') return <MaintenanceModule />;
   if (stableOperationalRoute?.legacyAdminTab) return <AdminLayout />;
 
   if (!workspaceReady) return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-600 text-sm font-bold">Carregando compatibilidade do ambiente…</div>;
