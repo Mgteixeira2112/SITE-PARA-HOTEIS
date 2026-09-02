@@ -73,5 +73,17 @@ export const getNovoHotelRouteByPath = (path: string) =>
 export const getNovoHotelRouteByLegacyAdminTab = (tab: AdminTab) =>
   NOVOHOTEL_ROUTES.find(route => route.legacyAdminTab === tab) || null;
 
+/**
+ * Resolve a primeira rota operacional estável que já possui uma tela direta no
+ * AdminLayout. Setores ainda dependentes de composição visual ficam de fora e
+ * continuam no WorkspaceRuntime como fallback de compatibilidade.
+ */
+export const getNovoHotelOperationalRouteForSectors = (sectorIds: OperationalSectorId[]) =>
+  NOVOHOTEL_ROUTES.find(route =>
+    !!route.operationalSector
+    && !!route.legacyAdminTab
+    && sectorIds.includes(route.operationalSector),
+  ) || null;
+
 export const getNovoHotelRoutesByGroup = (group: NovoHotelRouteGroup) =>
   NOVOHOTEL_ROUTES.filter(route => route.group === group);
