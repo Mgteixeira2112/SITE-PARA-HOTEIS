@@ -24,19 +24,31 @@ import { fetchUserOperationalSectorsState } from './services/userSectorService';
 import { OperationalSectorId } from './domain/operationalSectors';
 import { getNovoHotelOperationalRouteForSectors } from './navigation/novohotelRoutes';
 import { NovoHotelNavigationProvider } from './navigation/NovoHotelNavigationContext';
+import { resolveNovoHotelRouteAccess } from './navigation/resolveNovoHotelRouteAccess';
+import { useNovoHotelCanonicalRouteAccess } from './navigation/useNovoHotelCanonicalRouteAccess';
 import { useNovoHotelNavigation } from './navigation/useNovoHotelNavigation';
 import { WorkspaceCompatibilityFallback } from './workspace-engine/WorkspaceCompatibilityFallback';
 
 const NovoHotelAuthenticatedRouter: React.FC = () => {
-  const { currentUser, hotelConfig } = useHotel();
+  const { currentUser, hotelConfig, hasTabAccess } = useHotel();
   const { navigateToRoute } = useNovoHotelNavigation();
+  const { getCanonicalDecision, loading: canonicalAccessLoading } = useNovoHotelCanonicalRouteAccess();
   const [sectorIds, setSectorIds] = useState<OperationalSectorId[]>([]);
   const [sectorsLoading, setSectorsLoading] = useState(true);
-  const role = currentUser?.tipo_usuario || '';
+  const role = currentUser?.tipo_usuario || 'recepcionista';
   const management = role === 'admin' || role === 'gerente';
   const stableOperationalRoute = !management && !sectorsLoading
     ? getNovoHotelOperationalRouteForSectors(sectorIds)
     : null;
+  const stableRouteAccess = stableOperationalRoute
+    ? resolveNovoHotelRouteAccess(
+        stableOperationalRoute.id,
+        role,
+        hasTabAccess,
+        getCanonicalDecision(stableOperationalRoute.id),
+        canonicalAccessLoading,
+      )
+    : 'allowed';
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +77,12 @@ const NovoHotelAuthenticatedRouter: React.FC = () => {
   }, [stableOperationalRoute?.id, navigateToRoute]);
 
   if (management) return <AdminLayout />;
-  if (sectorsLoading) return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-600 text-sm font-bold">Carregando ambiente operacional…</div>;
+  if (sectorsLoading || stableRouteAccess === 'loading') {
+    return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-600 text-sm font-bold">Validando ambiente operacional…</div>;
+  }
+  if (stableOperationalRoute && stableRouteAccess === 'denied') {
+    return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-700 text-sm font-bold">Acesso não autorizado para esta área operacional.</div>;
+  }
 
   // Todas as áreas operacionais oficiais já possuem uma superfície direta.
   // O fallback permanece apenas como ponte defensiva para vínculos legados ou
