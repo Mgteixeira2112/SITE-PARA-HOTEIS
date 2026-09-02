@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { hotelIdentityService } from '../../../services/hotelIdentityService';
 import { settleFinancialAccount } from '../../../services/financeService';
+import { useNovoHotelTenant } from '../../../tenant/NovoHotelTenantContext';
 import type { PaymentMethod } from '../../../types/financial';
 import { loadAdministrativeFinanceUiSnapshot } from './administrativeFinanceUiAdapter';
 
@@ -15,17 +15,28 @@ const INITIAL_STATE: AdministrativeFinanceUiState = {
 };
 
 export function useAdministrativeFinanceUi(preferredHotelId?: string | null) {
+  const { tenant, loading: tenantLoading } = useNovoHotelTenant();
   const [state, setState] = useState<AdministrativeFinanceUiState>(INITIAL_STATE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hotelId, setHotelId] = useState<string | null>(null);
+  const resolvedHotelId = preferredHotelId?.trim() || tenant?.hotelId || null;
 
   const reload = useCallback(async () => {
+    if (!resolvedHotelId) {
+      if (!tenantLoading) {
+        setState(INITIAL_STATE);
+        setHotelId(null);
+        setError('FINANCE_TENANT_NOT_FOUND');
+        setLoading(false);
+      }
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const resolvedHotelId = await hotelIdentityService.getActiveHotelId(preferredHotelId);
       setHotelId(resolvedHotelId);
       const snapshot = await loadAdministrativeFinanceUiSnapshot(resolvedHotelId);
       setState(snapshot);
@@ -35,7 +46,7 @@ export function useAdministrativeFinanceUi(preferredHotelId?: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [preferredHotelId]);
+  }, [resolvedHotelId, tenantLoading]);
 
   useEffect(() => {
     void reload();
