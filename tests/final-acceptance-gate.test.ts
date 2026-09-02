@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
-const workflow = readFileSync('.github/workflows/hotel-os-validation.yml', 'utf8');
+const workflow = readFileSync('.github/workflows/novohotel-quality-gate.yml', 'utf8');
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as { scripts?: Record<string, string> };
 
 test('pipeline final executa lint, suíte completa, build e auditoria de produção', () => {
