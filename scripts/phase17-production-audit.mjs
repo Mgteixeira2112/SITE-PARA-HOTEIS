@@ -36,12 +36,16 @@ for (const file of sourceFiles) {
   }
 }
 
-const workflow = read('.github/workflows/hotel-os-validation.yml');
+const qualityGatePath = '.github/workflows/novohotel-quality-gate.yml';
+const workflow = read(qualityGatePath);
 if (!workflow.includes('bun install')) {
-  failures.push('.github/workflows/hotel-os-validation.yml: dependency installation step is missing');
+  failures.push(`${qualityGatePath}: dependency installation step is missing`);
 }
 if (workflow.includes('npm ci')) {
-  failures.push('.github/workflows/hotel-os-validation.yml: npm ci is invalid without package-lock.json');
+  failures.push(`${qualityGatePath}: npm ci is invalid without package-lock.json`);
+}
+if (!workflow.includes('bun run lint') || !workflow.includes('bun run test') || !workflow.includes('bun run build')) {
+  failures.push(`${qualityGatePath}: lint/test/build quality gates are required`);
 }
 
 const pkg = JSON.parse(read('package.json'));
@@ -78,7 +82,7 @@ if (!/server_mfa_required/.test(securityHelper)) {
   blockers.push('MFA production fail-closed marker was not found in securityHelper');
 }
 
-console.log('HOTEL OS — Phase 17 production audit');
+console.log('NOVOHOTEL — production audit');
 console.log(`Source files scanned: ${sourceFiles.length}`);
 console.log(`Migration files scanned: ${migrationFiles.length}`);
 
