@@ -22,6 +22,7 @@ import {
 import { getOperationalTodayStr } from '../../utils/dateHelper';
 import { UserProfileModal } from '../admin/UserProfileModal';
 import { getTheme, getFontFamilyClass } from '../../utils/themeHelper';
+import { useNovoHotelNavigation } from '../../navigation/useNovoHotelNavigation';
 
 // Componente de cabeçalho superior do painel administrativo PMS integrado com a paleta de cores do hotel
 export const AdminHeader: React.FC = () => {
@@ -34,11 +35,11 @@ export const AdminHeader: React.FC = () => {
     reservations,
     rooms,
     logout,
-    setAdminActiveTab,
     supabaseStatus,
     supabaseLatency,
     lastSyncTime
   } = useHotel();
+  const { navigateToRoute } = useNovoHotelNavigation();
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -121,7 +122,7 @@ export const AdminHeader: React.FC = () => {
 
               {/* Indicador de Status do Banco de Dados Supabase */}
               <button
-                onClick={() => setAdminActiveTab('settings')}
+                onClick={() => navigateToRoute('configuracoes')}
                 className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-750 border border-stone-700 text-[11px] transition cursor-pointer"
                 title={`Supabase Cloud DB: ${supabaseStatus} ${supabaseLatency ? `(${supabaseLatency}ms)` : ''} ${lastSyncTime ? `| Última sinc: ${lastSyncTime}` : ''}`}
               >
@@ -170,7 +171,7 @@ export const AdminHeader: React.FC = () => {
 
               {/* Indicador de notificações de chegadas do dia com cor do tema */}
               <div 
-                onClick={() => setAdminActiveTab('checkin_out')}
+                onClick={() => navigateToRoute('recepcao')}
                 className="relative p-2 text-stone-400 hover:text-white transition cursor-pointer"
                 title={`${checkinsToday} check-ins previstos para hoje`}
               >
@@ -239,7 +240,7 @@ export const AdminHeader: React.FC = () => {
                       <button
                         onClick={() => {
                           setIsMenuOpen(false);
-                          setAdminActiveTab('users');
+                          navigateToRoute('equipe');
                         }}
                         className="w-full px-4 py-2 text-left text-stone-300 hover:text-white hover:bg-stone-800 flex items-center gap-2.5 transition cursor-pointer"
                       >
@@ -251,7 +252,7 @@ export const AdminHeader: React.FC = () => {
                     <button
                       onClick={() => {
                         setIsMenuOpen(false);
-                        setAdminActiveTab('settings');
+                        navigateToRoute('configuracoes');
                       }}
                       className="w-full px-4 py-2 text-left text-stone-300 hover:text-white hover:bg-stone-800 flex items-center gap-2.5 transition cursor-pointer"
                     >
