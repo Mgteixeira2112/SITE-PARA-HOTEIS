@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import type { AdminTab, UserRole } from '../src/types';
 import { canAccessNovoHotelRoute } from '../src/navigation/novoHotelRouteAccess';
+import { resolveNovoHotelRouteAccess } from '../src/navigation/resolveNovoHotelRouteAccess';
 
 const legacyAccess = (role: UserRole, tab: AdminTab) => {
   if (role === 'admin') return true;
@@ -29,15 +30,50 @@ test('rotas operacionais diretas sem AdminTab legado continuam resolvíveis', ()
   assert.equal(canAccessNovoHotelRoute('manutencao', 'recepcionista', legacyAccess), true);
 });
 
-test('AdminLayout prioriza o RBAC canonico e preserva fallback legado', () => {
+test('rota mapeada aguarda a primeira decisão canônica antes de abrir a tela', () => {
+  assert.equal(
+    resolveNovoHotelRouteAccess('financeiro', 'financeiro', legacyAccess, null, true),
+    'loading',
+  );
+});
+
+test('negação canônica prevalece sobre permissão visual legada', () => {
+  assert.equal(
+    resolveNovoHotelRouteAccess(
+      'financeiro',
+      'financeiro',
+      legacyAccess,
+      { allowed: false, source: 'canonical', permission: 'finance.view', hotelId: 'hotel-1' },
+      false,
+    ),
+    'denied',
+  );
+});
+
+test('indisponibilidade canônica mantém somente a ponte de compatibilidade prevista', () => {
+  assert.equal(
+    resolveNovoHotelRouteAccess(
+      'financeiro',
+      'financeiro',
+      legacyAccess,
+      { allowed: null, source: 'unavailable', permission: 'finance.view', hotelId: 'hotel-1' },
+      false,
+    ),
+    'allowed',
+  );
+});
+
+test('shell e router protegem a montagem das telas com a mesma decisão efetiva', () => {
   const adminLayout = readFileSync('src/components/admin/AdminLayout.tsx', 'utf8');
+  const app = readFileSync('src/App.tsx', 'utf8');
   const canonicalHook = readFileSync('src/navigation/useNovoHotelCanonicalRouteAccess.ts', 'utf8');
 
-  assert.match(adminLayout, /useNovoHotelCanonicalRouteAccess\(\)/);
-  assert.match(adminLayout, /getCanonicalDecision\(item\.id\)/);
-  assert.match(adminLayout, /canonicalDecision\?\.source === 'canonical'/);
-  assert.match(adminLayout, /canonicalDecision\.allowed === true/);
-  assert.match(adminLayout, /canAccessNovoHotelRoute\(item\.id, userRole, hasTabAccess\)/);
+  assert.match(adminLayout, /resolveNovoHotelRouteAccess\(/);
+  assert.match(adminLayout, /currentAccessState === 'loading'/);
+  assert.match(adminLayout, /currentAccessState === 'denied'/);
+  assert.match(app, /resolveNovoHotelRouteAccess\(/);
+  assert.match(app, /stableRouteAccess === 'loading'/);
+  assert.match(app, /stableRouteAccess === 'denied'/);
 
   assert.match(canonicalHook, /hotelIdentityService\.getActiveHotelId\(\)/);
   assert.match(canonicalHook, /getCanonicalRouteAccess\(routeId, hotelId\)/);
