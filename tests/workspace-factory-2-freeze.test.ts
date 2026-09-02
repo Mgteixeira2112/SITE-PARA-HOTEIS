@@ -9,6 +9,7 @@ import {
 
 const adminLayout = readFileSync('src/components/admin/AdminLayout.tsx', 'utf8');
 const moduleRenderer = readFileSync('src/components/admin/NovoHotelModuleRenderer.tsx', 'utf8');
+const navigationBridge = readFileSync('src/navigation/novoHotelLegacyNavigationBridge.ts', 'utf8');
 const factoryUi = readFileSync('src/components/admin/WorkspaceEditorModule.tsx', 'utf8');
 const runtime = readFileSync('src/workspace-engine/WidgetDrivenWorkspace.tsx', 'utf8');
 const routes = readFileSync('src/navigation/novohotelRoutes.ts', 'utf8');
@@ -78,7 +79,8 @@ test('Freeze 2.0: Fábrica permanece acessível pela rota técnica do NovoHotel'
   assert.match(routes, /id: 'workspaces', path: '\/app\/sistema\/workspaces'/);
   assert.match(routes, /label: 'Fábrica de Workspaces'/);
   assert.match(routes, /managementOnly: true, technical: true/);
-  assert.match(adminLayout, /route\.id === 'workspaces' \? 'workspace_editor'/);
+  assert.match(navigationBridge, /if \(routeId === 'workspaces'\) return 'workspace_editor';/);
+  assert.match(adminLayout, /getCompatibilityTabForNovoHotelRoute\(route\.id\)/);
   assert.match(moduleRenderer, /routeId === 'workspaces' && <WorkspaceEditorModule \/>/);
 });
 
