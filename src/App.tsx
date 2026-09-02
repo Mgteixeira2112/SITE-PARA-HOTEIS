@@ -19,6 +19,7 @@ import { AdminLogin } from './components/auth/AdminLogin';
 import { SecurityVerificationModal } from './components/security/SecurityVerificationModal';
 import { ConnectionStatus } from './components/device/ConnectionStatus';
 import { GovernancaDirectPage } from './modules/governanca/GovernancaDirectPage';
+import { OperacaoGeralDirectPage } from './modules/operacao/OperacaoGeralDirectPage';
 import { fetchUserOperationalSectorsState } from './services/userSectorService';
 import { OperationalSectorId } from './domain/operationalSectors';
 import { getNovoHotelOperationalRouteForSectors } from './navigation/novohotelRoutes';
@@ -63,8 +64,10 @@ const NovoHotelAuthenticatedRouter: React.FC = () => {
   if (management) return <AdminLayout />;
   if (sectorsLoading) return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-600 text-sm font-bold">Carregando ambiente operacional…</div>;
 
-  // Áreas com tela operacional direta não passam mais pela infraestrutura da
-  // Fábrica. Apenas setores ainda sem rota estável chegam ao fallback legado.
+  // Todas as áreas operacionais oficiais já possuem uma superfície direta.
+  // O fallback permanece apenas como ponte defensiva para vínculos legados ou
+  // dados incompletos que ainda não resolvam uma rota estável do NovoHotel.
+  if (stableOperationalRoute?.id === 'dashboard') return <OperacaoGeralDirectPage />;
   if (stableOperationalRoute?.id === 'governanca') return <GovernancaDirectPage />;
   if (stableOperationalRoute?.id === 'manutencao') return <MaintenanceModule />;
   if (stableOperationalRoute?.legacyAdminTab) return <AdminLayout />;

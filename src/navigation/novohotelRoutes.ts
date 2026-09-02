@@ -45,7 +45,7 @@ export interface NovoHotelRouteDefinition {
  * rollback/fallback sem apagar a Fábrica.
  */
 export const NOVOHOTEL_ROUTES: readonly NovoHotelRouteDefinition[] = [
-  { id: 'dashboard', path: '/app', label: 'Visão Geral', group: 'operacao', legacyAdminTab: 'dashboard' },
+  { id: 'dashboard', path: '/app', label: 'Visão Geral', group: 'operacao', legacyAdminTab: 'dashboard', operationalSector: 'operacao', compatibilityWorkspaceId: 'workspace-operacao', directOperational: true },
   { id: 'reservas', path: '/app/reservas', label: 'Reservas', group: 'operacao', legacyAdminTab: 'reservations' },
   { id: 'recepcao', path: '/app/recepcao', label: 'Recepção', group: 'operacao', legacyAdminTab: 'checkin_out', operationalSector: 'recepcao', compatibilityWorkspaceId: 'workspace-recepcao', directOperational: true },
   { id: 'quartos', path: '/app/quartos', label: 'Quartos', group: 'operacao', legacyAdminTab: 'rooms' },
