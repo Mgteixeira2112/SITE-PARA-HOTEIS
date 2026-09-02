@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useHotel } from '../context/HotelContext';
 import {
   novoHotelTenantContextService,
   type NovoHotelTenantContext,
@@ -14,11 +15,19 @@ interface NovoHotelTenantContextValue {
 const TenantContext = createContext<NovoHotelTenantContextValue | null>(null);
 
 export const NovoHotelTenantProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+  const { isAuthenticated, currentUser } = useHotel();
   const [tenant, setTenant] = useState<NovoHotelTenantContext | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refreshTenant = useCallback(async () => {
+    if (!isAuthenticated || !currentUser?.id) {
+      setTenant(null);
+      setError(null);
+      setLoading(false);
+      return null;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -32,7 +41,7 @@ export const NovoHotelTenantProvider: React.FC<React.PropsWithChildren> = ({ chi
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated, currentUser?.id]);
 
   useEffect(() => {
     void refreshTenant();
