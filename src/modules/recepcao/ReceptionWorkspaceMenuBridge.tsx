@@ -15,7 +15,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { resolveWidgetPresentation } from '../../workspace-engine/presentation';
-import { WorkspaceDefinition, WorkspaceWidgetDefinition, WorkspaceWidgetType } from '../../workspace-engine/types';
+import { WorkspaceDefinition, WorkspaceWidgetType } from '../../workspace-engine/types';
 import { normalizeWorkspaceWidgets } from '../../workspace-engine/widgetCatalog';
 import { getWorkspaceWidgetRenderer } from '../../workspace-engine/widgetRuntimeRegistry';
 import { ReceptionWorkspaceShared } from './ReceptionWorkspaceShared';
@@ -34,23 +34,9 @@ const iconForWidget = (type: WorkspaceWidgetType) => {
   return LayoutGrid;
 };
 
-const panelHeadings: Partial<Record<WorkspaceWidgetType, string[]>> = {
-  metrics: ['Reservas', 'Check-ins hoje', 'Quartos disponíveis'],
-  arrivals: ['Próximas chegadas'],
-  departures: ['Saídas'],
-  'room-map': ['Mapa de quartos'],
-  alerts: ['Alertas ativos'],
-  'task-kanban': ['Kanban de tarefas da Recepção'],
-};
-
-const findPanelTarget = (root: HTMLElement, widget: WorkspaceWidgetDefinition) => {
-  const headings = panelHeadings[widget.type] || [];
-  const candidates = Array.from(root.querySelectorAll<HTMLElement>('h1,h2,h3,p,strong'));
-  for (const heading of headings) {
-    const match = candidates.find(node => node.textContent?.trim() === heading);
-    if (match) return match.closest<HTMLElement>('section') || match.parentElement;
-  }
-  return null;
+const escapeWidgetId = (widgetId: string) => {
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(widgetId);
+  return widgetId.replace(/["\\]/g, '\\$&');
 };
 
 export const ReceptionWorkspaceMenuBridge: React.FC<{ definition: WorkspaceDefinition }> = ({ definition }) => {
@@ -61,8 +47,7 @@ export const ReceptionWorkspaceMenuBridge: React.FC<{ definition: WorkspaceDefin
 
   const menuWidgets = useMemo(() => normalizeWorkspaceWidgets(definition.widgets)
     .map(widget => ({ widget, presentation: resolveWidgetPresentation(definition, widget, 'desktop') }))
-    .filter(({ widget, presentation }) => widget.enabled !== false && widget.permissions?.view !== false && !presentation.hidden)
-    .sort((a, b) => (a.presentation.order ?? a.widget.order ?? 0) - (b.presentation.order ?? b.widget.order ?? 0)), [definition]);
+    .filter(({ widget, presentation }) => widget.enabled !== false && widget.permissions?.view !== false && !presentation.hidden), [definition]);
 
   const openWidget = useMemo(() => menuWidgets.find(item => item.widget.id === openWidgetId)?.widget || null, [menuWidgets, openWidgetId]);
   const OpenRenderer = openWidget ? getWorkspaceWidgetRenderer(openWidget.type) : null;
@@ -90,20 +75,22 @@ export const ReceptionWorkspaceMenuBridge: React.FC<{ definition: WorkspaceDefin
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [openWidgetId]);
 
-  const activateWidget = (widget: WorkspaceWidgetDefinition, display: string) => {
-    setActiveWidgetId(widget.id);
+  const activateWidget = (widgetId: string, display: string) => {
+    setActiveWidgetId(widgetId);
     if (display === 'button') {
-      setOpenWidgetId(widget.id);
+      setOpenWidgetId(widgetId);
       return;
     }
+
     const root = rootRef.current;
     if (!root) return;
-    const target = findPanelTarget(root, widget);
-    if (!target) {
-      setOpenWidgetId(widget.id);
-      return;
-    }
+    const target = root.querySelector<HTMLElement>(`[data-widget-id="${escapeWidgetId(widgetId)}"]`);
+    if (!target) return;
+
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+    target.focus({ preventScroll: true });
+
     const previousOutline = target.style.outline;
     const previousOffset = target.style.outlineOffset;
     target.style.outline = '2px solid rgb(245 158 11)';
@@ -124,7 +111,7 @@ export const ReceptionWorkspaceMenuBridge: React.FC<{ definition: WorkspaceDefin
         return <button
           key={widget.id}
           type="button"
-          onClick={() => activateWidget(widget, presentation.display)}
+          onClick={() => activateWidget(widget.id, presentation.display)}
           className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-bold transition ${selected ? 'bg-amber-50 text-amber-900 shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
           title={widget.title || widget.type}
         >
