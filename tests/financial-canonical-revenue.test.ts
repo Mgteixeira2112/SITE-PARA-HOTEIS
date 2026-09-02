@@ -19,8 +19,10 @@ test('receita operacional não usa HotelContext, mock ou persistência local', (
   assert.doesNotMatch(hookSource, /HotelContext|INITIAL_PAYMENTS|mockInitialData|localStorage|sessionStorage/);
 });
 
-test('hook resolve hotel canônico e não fabrica valores quando a leitura falha', () => {
-  assert.match(hookSource, /hotelIdentityService\.getActiveHotelId/);
+test('hook usa tenant compartilhado e não fabrica valores quando a leitura falha', () => {
+  assert.match(hookSource, /useNovoHotelTenant/);
+  assert.match(hookSource, /tenant\?\.hotelId/);
+  assert.doesNotMatch(hookSource, /hotelIdentityService\.getActiveHotelId/);
   assert.match(hookSource, /loadOperationalRevenueSummary/);
   assert.match(hookSource, /setSummary\(EMPTY_SUMMARY\)/);
   assert.match(hookSource, /setError/);
