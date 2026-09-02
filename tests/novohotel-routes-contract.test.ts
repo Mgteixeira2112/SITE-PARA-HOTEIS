@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { OPERATIONAL_SECTORS } from '../src/domain/operationalSectors';
 import {
   NOVOHOTEL_ROUTES,
   getNovoHotelOperationalRouteForSectors,
@@ -54,6 +55,14 @@ test('NovoHotel resolve apenas setores que já possuem tela operacional direta',
   assert.equal(getNovoHotelOperationalRouteForSectors(['manutencao'])?.id, 'manutencao');
   assert.equal(getNovoHotelOperationalRouteForSectors(['cozinha'])?.id, 'kds');
   assert.equal(getNovoHotelOperationalRouteForSectors([]), null);
+});
+
+test('Operação Geral é o único setor ainda dependente do fallback de Workspace', () => {
+  const fallbackSectors = OPERATIONAL_SECTORS
+    .map(sector => sector.id)
+    .filter(sectorId => !getNovoHotelOperationalRouteForSectors([sectorId]));
+
+  assert.deepEqual(fallbackSectors, ['operacao']);
 });
 
 test('NovoHotel mantém agrupamento SaaS e Fábrica somente como rota técnica de compatibilidade', () => {
