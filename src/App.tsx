@@ -19,13 +19,11 @@ import { AdminLogin } from './components/auth/AdminLogin';
 import { SecurityVerificationModal } from './components/security/SecurityVerificationModal';
 import { ConnectionStatus } from './components/device/ConnectionStatus';
 import { GovernancaWorkspace } from './modules/governanca/GovernancaWorkspace';
+import { GOVERNANCA_DIRECT_DEFINITION } from './modules/governanca/governancaDirectDefinition';
 import { fetchUserOperationalSectorsState } from './services/userSectorService';
 import { OperationalSectorId } from './domain/operationalSectors';
 import { getNovoHotelOperationalRouteForSectors } from './navigation/novohotelRoutes';
-import { createOfficialWorkspaceDefinition } from './workspace-engine/workspaceOfficialFactory';
 import { WorkspaceCompatibilityFallback } from './workspace-engine/WorkspaceCompatibilityFallback';
-
-const governanceDirectDefinition = createOfficialWorkspaceDefinition('workspace-governanca');
 
 const NovoHotelAuthenticatedRouter: React.FC = () => {
   const { currentUser, hotelConfig, setAdminActiveTab } = useHotel();
@@ -68,7 +66,7 @@ const NovoHotelAuthenticatedRouter: React.FC = () => {
 
   // Áreas com tela operacional direta não passam mais pela infraestrutura da
   // Fábrica. Apenas setores ainda sem rota estável chegam ao fallback legado.
-  if (stableOperationalRoute?.id === 'governanca') return <GovernancaWorkspace definition={governanceDirectDefinition} />;
+  if (stableOperationalRoute?.id === 'governanca') return <GovernancaWorkspace definition={GOVERNANCA_DIRECT_DEFINITION} />;
   if (stableOperationalRoute?.id === 'manutencao') return <MaintenanceModule />;
   if (stableOperationalRoute?.legacyAdminTab) return <AdminLayout />;
 
