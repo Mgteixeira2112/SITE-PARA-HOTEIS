@@ -29,9 +29,18 @@ test('rotas operacionais diretas sem AdminTab legado continuam resolvíveis', ()
   assert.equal(canAccessNovoHotelRoute('manutencao', 'recepcionista', legacyAccess), true);
 });
 
-test('AdminLayout consome a fronteira única de acesso por rota', () => {
+test('AdminLayout prioriza o RBAC canonico e preserva fallback legado', () => {
   const adminLayout = readFileSync('src/components/admin/AdminLayout.tsx', 'utf8');
+  const canonicalHook = readFileSync('src/navigation/useNovoHotelCanonicalRouteAccess.ts', 'utf8');
+
+  assert.match(adminLayout, /useNovoHotelCanonicalRouteAccess\(\)/);
+  assert.match(adminLayout, /getCanonicalDecision\(item\.id\)/);
+  assert.match(adminLayout, /canonicalDecision\?\.source === 'canonical'/);
+  assert.match(adminLayout, /canonicalDecision\.allowed === true/);
   assert.match(adminLayout, /canAccessNovoHotelRoute\(item\.id, userRole, hasTabAccess\)/);
+
+  assert.match(canonicalHook, /hotelIdentityService\.getActiveHotelId\(\)/);
+  assert.match(canonicalHook, /getCanonicalRouteAccess\(routeId, hotelId\)/);
   assert.doesNotMatch(adminLayout, /item\.id === 'indicadores'/);
   assert.doesNotMatch(adminLayout, /item\.id === 'workspaces'/);
 });
