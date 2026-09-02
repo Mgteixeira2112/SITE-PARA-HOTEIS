@@ -1,8 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useHotel } from '../context/HotelContext';
 import type { AdminTab } from '../types';
 import {
   getCompatibilityTabForNovoHotelRoute,
+  getNovoHotelRouteIdFromCompatibilityTab,
   type NovoHotelCompatibilityTab,
 } from './novoHotelLegacyNavigationBridge';
 import type { NovoHotelRouteId } from './novohotelRoutes';
@@ -16,6 +17,11 @@ import type { NovoHotelRouteId } from './novohotelRoutes';
  */
 export const useNovoHotelNavigation = () => {
   const { adminActiveTab, setAdminActiveTab } = useHotel();
+  const activeCompatibilityTab = adminActiveTab as NovoHotelCompatibilityTab;
+  const activeRouteId = useMemo(
+    () => getNovoHotelRouteIdFromCompatibilityTab(activeCompatibilityTab),
+    [activeCompatibilityTab],
+  );
 
   const navigateToRoute = useCallback((routeId: NovoHotelRouteId) => {
     const compatibilityTab = getCompatibilityTabForNovoHotelRoute(routeId);
@@ -29,7 +35,8 @@ export const useNovoHotelNavigation = () => {
   }, [setAdminActiveTab]);
 
   return {
-    activeCompatibilityTab: adminActiveTab as NovoHotelCompatibilityTab,
+    activeRouteId,
+    activeCompatibilityTab,
     navigateToRoute,
     navigateToCompatibilityTab,
   };
