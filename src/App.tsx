@@ -23,6 +23,7 @@ import { OperacaoGeralDirectPage } from './modules/operacao/OperacaoGeralDirectP
 import { fetchUserOperationalSectorsState } from './services/userSectorService';
 import { OperationalSectorId } from './domain/operationalSectors';
 import { getNovoHotelOperationalRouteForSectors } from './navigation/novohotelRoutes';
+import { NovoHotelNavigationProvider } from './navigation/NovoHotelNavigationContext';
 import { useNovoHotelNavigation } from './navigation/useNovoHotelNavigation';
 import { WorkspaceCompatibilityFallback } from './workspace-engine/WorkspaceCompatibilityFallback';
 
@@ -98,5 +99,13 @@ const MainContent: React.FC = () => {
 };
 
 export default function App() {
-  return <HotelProvider><FrigobarProvider><MainContent /></FrigobarProvider></HotelProvider>;
+  return (
+    <HotelProvider>
+      <NovoHotelNavigationProvider>
+        <FrigobarProvider>
+          <MainContent />
+        </FrigobarProvider>
+      </NovoHotelNavigationProvider>
+    </HotelProvider>
+  );
 }
