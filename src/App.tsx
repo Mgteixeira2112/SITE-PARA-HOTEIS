@@ -22,10 +22,8 @@ import { GovernancaWorkspace } from './modules/governanca/GovernancaWorkspace';
 import { fetchUserOperationalSectorsState } from './services/userSectorService';
 import { OperationalSectorId } from './domain/operationalSectors';
 import { getNovoHotelOperationalRouteForSectors } from './navigation/novohotelRoutes';
-import { resolveWorkspaceForUserAndSectors } from './workspace-engine/registry';
-import { WorkspaceRuntime } from './workspace-engine/WorkspaceRuntime';
 import { createOfficialWorkspaceDefinition } from './workspace-engine/workspaceOfficialFactory';
-import { DEFAULT_WORKSPACE_HOTEL_ID, hydrateWorkspaceOverridesFromSupabase, subscribeWorkspaceConfig } from './workspace-engine/workspaceConfigStore';
+import { WorkspaceCompatibilityFallback } from './workspace-engine/WorkspaceCompatibilityFallback';
 
 const governanceDirectDefinition = createOfficialWorkspaceDefinition('workspace-governanca');
 
@@ -33,11 +31,8 @@ const NovoHotelAuthenticatedRouter: React.FC = () => {
   const { currentUser, hotelConfig, setAdminActiveTab } = useHotel();
   const [sectorIds, setSectorIds] = useState<OperationalSectorId[]>([]);
   const [sectorsLoading, setSectorsLoading] = useState(true);
-  const [workspaceReady, setWorkspaceReady] = useState(false);
-  const [, setWorkspaceRevision] = useState(0);
   const role = currentUser?.tipo_usuario || '';
   const management = role === 'admin' || role === 'gerente';
-  const hotelId = hotelConfig?.id || DEFAULT_WORKSPACE_HOTEL_ID;
   const stableOperationalRoute = !management && !sectorsLoading
     ? getNovoHotelOperationalRouteForSectors(sectorIds)
     : null;
@@ -68,46 +63,20 @@ const NovoHotelAuthenticatedRouter: React.FC = () => {
     setAdminActiveTab(stableOperationalRoute.legacyAdminTab);
   }, [stableOperationalRoute?.legacyAdminTab, setAdminActiveTab]);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (management || sectorsLoading || stableOperationalRoute) {
-      setWorkspaceReady(true);
-      return () => { cancelled = true; };
-    }
-
-    setWorkspaceReady(false);
-    void hydrateWorkspaceOverridesFromSupabase(hotelId).then(() => {
-      if (!cancelled) setWorkspaceReady(true);
-    }).catch(() => {
-      if (!cancelled) setWorkspaceReady(true);
-    });
-    return () => { cancelled = true; };
-  }, [management, sectorsLoading, stableOperationalRoute?.id, hotelId]);
-
-  // A configuração dinâmica da Fábrica só precisa invalidar o runtime quando
-  // este router realmente caiu no caminho legado de compatibilidade. Áreas que
-  // já possuem rota estável não assinam mais eventos globais de Workspace.
-  useEffect(() => {
-    if (management || sectorsLoading || stableOperationalRoute) return;
-    return subscribeWorkspaceConfig(() => {
-      setWorkspaceRevision(current => current + 1);
-    });
-  }, [management, sectorsLoading, stableOperationalRoute?.id]);
-
   if (management) return <AdminLayout />;
   if (sectorsLoading) return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-600 text-sm font-bold">Carregando ambiente operacional…</div>;
 
-  // Áreas com tela operacional direta não precisam hidratar a Fábrica de
-  // Workspaces para iniciar a sessão. Recepção/Cozinha usam módulos do
-  // AdminLayout; Governança e Manutenção usam telas operacionais dedicadas.
+  // Áreas com tela operacional direta não passam mais pela infraestrutura da
+  // Fábrica. Apenas setores ainda sem rota estável chegam ao fallback legado.
   if (stableOperationalRoute?.id === 'governanca') return <GovernancaWorkspace definition={governanceDirectDefinition} />;
   if (stableOperationalRoute?.id === 'manutencao') return <MaintenanceModule />;
   if (stableOperationalRoute?.legacyAdminTab) return <AdminLayout />;
 
-  if (!workspaceReady) return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-600 text-sm font-bold">Carregando compatibilidade do ambiente…</div>;
-  const workspace = resolveWorkspaceForUserAndSectors(currentUser?.id, sectorIds, hotelId);
-  if (workspace) return <WorkspaceRuntime definition={workspace} />;
-  return <AdminLayout />;
+  return <WorkspaceCompatibilityFallback
+    userId={currentUser?.id}
+    sectorIds={sectorIds}
+    hotelId={hotelConfig?.id}
+  />;
 };
 
 const MainContent: React.FC = () => {
