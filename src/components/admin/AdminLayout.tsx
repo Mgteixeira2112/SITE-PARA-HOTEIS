@@ -1,24 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useHotel } from '../../context/HotelContext';
 import { AdminHeader } from '../navigation/AdminHeader';
-import { DashboardModule } from './DashboardModule';
-import { ExecutiveDashboardModule } from './ExecutiveDashboardModule';
-import { DashboardAlertsWidget } from './DashboardAlertsWidget';
-import { RoomsModule } from './RoomsModule';
-import { ReservationsModule } from './ReservationsModule';
-import { CheckInOutModule } from './CheckInOutModule';
-import { GuestsModule } from './GuestsModule';
-import { FrigobarModule } from './FrigobarModule';
-import { AutomationModule } from './AutomationModule';
-import { SettingsModule } from './SettingsModule';
-import { UsersOperationalAccessModule } from './UsersOperationalAccessModule';
-import { KanbanWorkspaceModule } from './KanbanWorkspaceModule';
 import { KanbanLocalAutomationBridge } from './KanbanLocalAutomationBridge';
-import { WorkspaceEditorModule } from './WorkspaceEditorModule';
-import { PDVPage } from './PDVPage';
-import { KDSPage } from './KDSPage';
-import { HotelOSCommandCenter } from './HotelOSCommandCenter';
-import { FinancialModule } from './FinancialModule';
+import { NovoHotelModuleRenderer, type NovoHotelRenderableAdminTab } from './NovoHotelModuleRenderer';
 import {
   LayoutDashboard,
   BarChart3,
@@ -53,7 +37,7 @@ import {
 } from '../../navigation/novohotelRoutes';
 
 type NavContextId = NovoHotelRouteGroup;
-type ExtendedAdminTab = AdminTab | 'workspace_editor';
+type ExtendedAdminTab = NovoHotelRenderableAdminTab;
 interface NavItemConfig {
   id: ExtendedAdminTab;
   routeId?: NovoHotelRouteId;
@@ -220,24 +204,7 @@ export const AdminLayout: React.FC = () => {
               Retornar à Visão Geral <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
-        ) : <>
-          {activeTab === 'dashboard' && <DashboardModule />}
-          {activeTab === 'management_bi' && <><ExecutiveDashboardModule /><DashboardAlertsWidget /></>}
-          {activeTab === 'command_center' && <HotelOSCommandCenter />}
-          {activeTab === 'workspace_editor' && <WorkspaceEditorModule />}
-          {activeTab === 'kanban' && <KanbanWorkspaceModule />}
-          {activeTab === 'reservations' && <ReservationsModule />}
-          {activeTab === 'checkin_out' && <CheckInOutModule />}
-          {activeTab === 'rooms' && <RoomsModule />}
-          {activeTab === 'guests' && <GuestsModule />}
-          {activeTab === 'financial' && <FinancialModule />}
-          {activeTab === 'frigobar' && <FrigobarModule />}
-          {activeTab === 'automation' && <AutomationModule />}
-          {activeTab === 'users' && <UsersOperationalAccessModule />}
-          {activeTab === 'pdv' && <PDVPage />}
-          {activeTab === 'kds' && <KDSPage />}
-          {(activeTab === 'settings' || activeTab === 'design') && <SettingsModule />}
-        </>}
+        ) : <NovoHotelModuleRenderer activeTab={activeTab} />}
       </main>
     </div>
   </div>;
