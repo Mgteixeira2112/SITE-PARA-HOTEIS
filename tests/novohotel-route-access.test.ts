@@ -67,6 +67,7 @@ test('shell e router protegem a montagem das telas com a mesma decisão efetiva'
   const adminLayout = readFileSync('src/components/admin/AdminLayout.tsx', 'utf8');
   const app = readFileSync('src/App.tsx', 'utf8');
   const canonicalHook = readFileSync('src/navigation/useNovoHotelCanonicalRouteAccess.ts', 'utf8');
+  const tenantContext = readFileSync('src/tenant/NovoHotelTenantContext.tsx', 'utf8');
   const tenantService = readFileSync('src/services/novoHotelTenantContextService.ts', 'utf8');
 
   assert.match(adminLayout, /resolveNovoHotelRouteAccess\(/);
@@ -76,10 +77,17 @@ test('shell e router protegem a montagem das telas com a mesma decisão efetiva'
   assert.match(app, /stableRouteAccess === 'loading'/);
   assert.match(app, /stableRouteAccess === 'denied'/);
 
-  assert.match(canonicalHook, /novoHotelTenantContextService\.getActiveTenant\(\)/);
+  assert.match(app, /<NovoHotelTenantProvider>/);
+  assert.match(app, /useNovoHotelTenant\(\)/);
+  assert.match(app, /hotelId=\{tenant\?\.hotelId \|\| hotelConfig\?\.id\}/);
+  assert.match(canonicalHook, /useNovoHotelTenant\(\)/);
   assert.match(canonicalHook, /getCanonicalRouteAccess\(routeId, tenant\.hotelId\)/);
+  assert.doesNotMatch(canonicalHook, /novoHotelTenantContextService/);
   assert.doesNotMatch(canonicalHook, /hotelIdentityService\.getActiveHotelId\(\)/);
 
+  assert.match(tenantContext, /novoHotelTenantContextService\.getActiveTenant\(\)/);
+  assert.match(tenantContext, /isAuthenticated/);
+  assert.match(tenantContext, /currentUser\?\.id/);
   assert.match(tenantService, /from\('hotel_memberships'\)/);
   assert.match(tenantService, /from\('organization_memberships'\)/);
   assert.match(tenantService, /from\('hoteis'\)/);
