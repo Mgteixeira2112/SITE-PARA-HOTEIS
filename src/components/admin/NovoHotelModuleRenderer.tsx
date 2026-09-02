@@ -1,5 +1,6 @@
 import React from 'react';
 import { AdminTab } from '../../types';
+import type { NovoHotelRouteId } from '../../navigation/novohotelRoutes';
 import { AutomationModule } from './AutomationModule';
 import { DashboardAlertsWidget } from './DashboardAlertsWidget';
 import { DashboardModule } from './DashboardModule';
@@ -20,31 +21,53 @@ import { WorkspaceEditorModule } from './WorkspaceEditorModule';
 
 export type NovoHotelRenderableAdminTab = AdminTab | 'workspace_editor';
 
+interface NovoHotelModuleRendererProps {
+  routeId?: NovoHotelRouteId | null;
+  activeTab: NovoHotelRenderableAdminTab;
+}
+
 /**
  * Catálogo de renderização dos módulos administrativos do NovoHotel.
  *
- * O shell de navegação não precisa conhecer a implementação de cada tela. Este
- * componente preserva os módulos existentes e apenas centraliza a resolução da
- * superfície visual correspondente à aba legada durante a transição para rotas
- * SaaS estáveis.
+ * As rotas canônicas passam a ser a identidade principal das telas. activeTab
+ * permanece somente como ponte de compatibilidade para superfícies técnicas que
+ * ainda não possuem rota funcional própria, como a Central Hotel OS.
  */
-export const NovoHotelModuleRenderer: React.FC<{ activeTab: NovoHotelRenderableAdminTab }> = ({ activeTab }) => (
+export const NovoHotelModuleRenderer: React.FC<NovoHotelModuleRendererProps> = ({ routeId, activeTab }) => (
   <>
-    {activeTab === 'dashboard' && <DashboardModule />}
-    {activeTab === 'management_bi' && <><ExecutiveDashboardModule /><DashboardAlertsWidget /></>}
-    {activeTab === 'command_center' && <HotelOSCommandCenter />}
-    {activeTab === 'workspace_editor' && <WorkspaceEditorModule />}
-    {activeTab === 'kanban' && <KanbanWorkspaceModule />}
-    {activeTab === 'reservations' && <ReservationsModule />}
-    {activeTab === 'checkin_out' && <CheckInOutModule />}
-    {activeTab === 'rooms' && <RoomsModule />}
-    {activeTab === 'guests' && <GuestsModule />}
-    {activeTab === 'financial' && <FinancialModule />}
-    {activeTab === 'frigobar' && <FrigobarModule />}
-    {activeTab === 'automation' && <AutomationModule />}
-    {activeTab === 'users' && <UsersOperationalAccessModule />}
-    {activeTab === 'pdv' && <PDVPage />}
-    {activeTab === 'kds' && <KDSPage />}
-    {(activeTab === 'settings' || activeTab === 'design') && <SettingsModule />}
+    {routeId === 'dashboard' && <DashboardModule />}
+    {routeId === 'indicadores' && <><ExecutiveDashboardModule /><DashboardAlertsWidget /></>}
+    {routeId === 'workspaces' && <WorkspaceEditorModule />}
+    {routeId === 'kanban' && <KanbanWorkspaceModule />}
+    {routeId === 'reservas' && <ReservationsModule />}
+    {routeId === 'recepcao' && <CheckInOutModule />}
+    {routeId === 'quartos' && <RoomsModule />}
+    {routeId === 'hospedes' && <GuestsModule />}
+    {routeId === 'financeiro' && <FinancialModule />}
+    {routeId === 'frigobar' && <FrigobarModule />}
+    {routeId === 'automacoes' && <AutomationModule />}
+    {routeId === 'equipe' && <UsersOperationalAccessModule />}
+    {routeId === 'pdv' && <PDVPage />}
+    {routeId === 'kds' && <KDSPage />}
+    {(routeId === 'configuracoes' || routeId === 'configuracoes-site') && <SettingsModule />}
+
+    {!routeId && activeTab === 'command_center' && <HotelOSCommandCenter />}
+
+    {/* Compatibilidade temporária para consumidores que ainda não enviam routeId. */}
+    {!routeId && activeTab === 'dashboard' && <DashboardModule />}
+    {!routeId && activeTab === 'management_bi' && <><ExecutiveDashboardModule /><DashboardAlertsWidget /></>}
+    {!routeId && activeTab === 'workspace_editor' && <WorkspaceEditorModule />}
+    {!routeId && activeTab === 'kanban' && <KanbanWorkspaceModule />}
+    {!routeId && activeTab === 'reservations' && <ReservationsModule />}
+    {!routeId && activeTab === 'checkin_out' && <CheckInOutModule />}
+    {!routeId && activeTab === 'rooms' && <RoomsModule />}
+    {!routeId && activeTab === 'guests' && <GuestsModule />}
+    {!routeId && activeTab === 'financial' && <FinancialModule />}
+    {!routeId && activeTab === 'frigobar' && <FrigobarModule />}
+    {!routeId && activeTab === 'automation' && <AutomationModule />}
+    {!routeId && activeTab === 'users' && <UsersOperationalAccessModule />}
+    {!routeId && activeTab === 'pdv' && <PDVPage />}
+    {!routeId && activeTab === 'kds' && <KDSPage />}
+    {!routeId && (activeTab === 'settings' || activeTab === 'design') && <SettingsModule />}
   </>
 );
