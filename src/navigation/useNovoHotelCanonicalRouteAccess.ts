@@ -5,7 +5,7 @@ import {
   novoHotelAuthorizationService,
   type NovoHotelCanonicalAccessDecision,
 } from '../services/novoHotelAuthorizationService';
-import { novoHotelTenantContextService } from '../services/novoHotelTenantContextService';
+import { useNovoHotelTenant } from '../tenant/NovoHotelTenantContext';
 
 export type NovoHotelCanonicalRouteDecisions = Partial<
   Record<NovoHotelRouteId, NovoHotelCanonicalAccessDecision>
@@ -17,18 +17,23 @@ const CANONICAL_ROUTE_IDS = Object.keys(
 
 /**
  * Mantém no frontend o estado das permissões canônicas já disponíveis.
- * O hotel usado nas RPCs vem primeiro do membership multi-tenant autenticado;
- * hotel_config permanece apenas como fallback dentro do resolver de tenant.
+ * O hotel usado nas RPCs vem do contexto de tenant compartilhado do NovoHotel.
  */
 export const useNovoHotelCanonicalRouteAccess = () => {
+  const { tenant, loading: tenantLoading } = useNovoHotelTenant();
   const [decisions, setDecisions] = useState<NovoHotelCanonicalRouteDecisions>({});
-  const [loading, setLoading] = useState(true);
+  const [accessLoading, setAccessLoading] = useState(false);
 
   const refreshCanonicalAccess = useCallback(async () => {
-    setLoading(true);
+    if (!tenant?.hotelId) {
+      setDecisions({});
+      setAccessLoading(false);
+      return;
+    }
+
+    setAccessLoading(true);
 
     try {
-      const tenant = await novoHotelTenantContextService.getActiveTenant();
       const entries = await Promise.all(
         CANONICAL_ROUTE_IDS.map(async routeId => [
           routeId,
@@ -38,13 +43,11 @@ export const useNovoHotelCanonicalRouteAccess = () => {
 
       setDecisions(Object.fromEntries(entries) as NovoHotelCanonicalRouteDecisions);
     } catch {
-      // A ausência do tenant ativo não promove acesso: o shell mantém o contrato
-      // legado até que o contexto canônico possa ser consultado novamente.
       setDecisions({});
     } finally {
-      setLoading(false);
+      setAccessLoading(false);
     }
-  }, []);
+  }, [tenant?.hotelId]);
 
   useEffect(() => {
     void refreshCanonicalAccess();
@@ -57,7 +60,7 @@ export const useNovoHotelCanonicalRouteAccess = () => {
 
   return {
     decisions,
-    loading,
+    loading: tenantLoading || accessLoading,
     getCanonicalDecision,
     refreshCanonicalAccess,
   };
