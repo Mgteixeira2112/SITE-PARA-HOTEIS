@@ -40,6 +40,51 @@ Nenhuma remoção, consolidação de engine, migration destrutiva ou mudança es
 3. identificação da fonte de verdade de cada função;
 4. CI verde ou falha de baseline documentada e corrigida isoladamente.
 
+## Diagnóstico do baseline de testes
+
+A execução `Hotel OS validation` da PR #183 falhou em `bun run test`. Para obter o diagnóstico completo sem alterar a lógica do produto, o workflow foi instrumentado temporariamente apenas para salvar a saída do runner como artifact; em seguida, o workflow original foi restaurado.
+
+Resultado capturado:
+
+- 873 testes executados;
+- 852 aprovados;
+- 21 falharam;
+- lint continuou verde;
+- build e `audit:production` permaneceram bloqueados pelo gate de testes.
+
+As 21 falhas estão concentradas na camada legada de **Workspace/Fábrica/apresentação visual**, principalmente testes de freeze e asserts baseados em texto/regex sobre implementação. Falhas identificadas:
+
+1. `financial-workspace-official-template.test.ts` — 3 falhas;
+2. `workspace-common-presentation-controls.test.ts` — 1 falha;
+3. `workspace-desktop-layout-editor.test.ts` — 1 falha;
+4. `workspace-engine.test.ts` — 1 falha;
+5. `workspace-factory-2-freeze.test.ts` — 2 falhas;
+6. testes adicionais da Fábrica/templates oficiais — falhas de expectativa sobre Financeiro/Administrativo;
+7. testes de presets e controles visuais — divergências de contrato textual;
+8. testes de `WorkspaceRuntime`/roteador operacional — expectativas antigas sobre canvas, sidebar e atualização pela Fábrica;
+9. testes de runtime espacial/sidebar — expectativas antigas sobre posição livre e widgets em botão;
+10. `workspace-visual-backgrounds.test.ts` — expectativa antiga sobre `backgroundFit`;
+11. `workspace-widget-display.test.ts` — expectativa textual antiga sobre largura/exibição.
+
+Exemplos objetivos encontrados no log:
+
+- catálogo oficial esperado com 7 Workspaces, enquanto o código atual expõe 8 ao separar `workspace-administrativo-hotel` e `workspace-administrativo-sistema`;
+- testes ainda procuram `workspace-administrativo` singular;
+- vários testes procuram trechos literais como `>LARGURA<select`, `sidebar.enabled === true`, `desktopSpatialEntries = viewport === 'desktop'` e `backgroundFit`, mas a implementação atual já não corresponde literalmente a esses freezes;
+- o teste do Financeiro lê entrada vazia para o template esperado, indicando que o local/contrato de origem mudou em relação ao teste.
+
+### Classificação da falha
+
+A transformação NovoHotel não alterou código de aplicação nem testes antes deste diagnóstico: a PR continha apenas `docs/NOVOHOTEL-TRANSFORMACAO-FASE-00-01.md`. Portanto, essas 21 falhas **não foram introduzidas pela transformação NovoHotel**. Elas pertencem ao baseline herdado no SHA de partida ou à combinação atual desse baseline com o ambiente de CI (`bun-version: latest`).
+
+Isso não autoriza ignorar os testes. A FASE 0 permanece bloqueada até classificarmos cada falha em uma destas categorias:
+
+- teste obsoleto em relação ao código válido atual;
+- regressão real já existente no baseline;
+- comportamento dependente de ambiente/versão do Bun.
+
+A correção deverá ser isolada e mínima. Não será feita alteração de produto para satisfazer regex de freeze sem comprovar primeiro qual contrato é realmente a fonte de verdade atual.
+
 ---
 
 # FASE 1 — Inventário funcional
