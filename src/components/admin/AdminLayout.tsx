@@ -39,9 +39,11 @@ import {
 
 type NavContextId = NovoHotelRouteGroup;
 type ExtendedAdminTab = NovoHotelRenderableAdminTab;
+type NavItemId = NovoHotelRouteId | 'command_center';
+
 interface NavItemConfig {
-  id: ExtendedAdminTab;
-  routeId?: NovoHotelRouteId;
+  id: NavItemId;
+  compatibilityTab: ExtendedAdminTab;
   path?: string;
   context: NavContextId;
   label: string;
@@ -90,8 +92,8 @@ export const AdminLayout: React.FC = () => {
     const routeItems = NOVOHOTEL_ROUTES
       .filter(route => route.legacyAdminTab || route.id === 'workspaces')
       .map<NavItemConfig>(route => ({
-        id: route.id === 'workspaces' ? 'workspace_editor' : route.legacyAdminTab as AdminTab,
-        routeId: route.id,
+        id: route.id,
+        compatibilityTab: route.id === 'workspaces' ? 'workspace_editor' : route.legacyAdminTab as AdminTab,
         path: route.path,
         context: route.group,
         label: route.label,
@@ -110,6 +112,7 @@ export const AdminLayout: React.FC = () => {
     // navegação principal do NovoHotel nem cria uma nova rota funcional.
     routeItems.push({
       id: 'command_center',
+      compatibilityTab: 'command_center',
       context: 'sistema',
       label: 'Central Hotel OS',
       icon: Sparkles,
@@ -128,10 +131,10 @@ export const AdminLayout: React.FC = () => {
     { id: 'sistema', label: 'Sistema', icon: Sliders },
   ];
 
-  // A identidade visual da navegação já segue a rota canônica do NovoHotel.
-  // A aba legada permanece apenas como ponte temporária para o estado/contexto existente.
-  const currentTab = navItems.find(item => item.routeId === activeRouteId)
-    || navItems.find(item => item.id === activeTab)
+  // A identidade da navegação já é a rota canônica. compatibilityTab existe
+  // somente para alimentar o estado legado até a sua remoção definitiva.
+  const currentTab = navItems.find(item => item.id === activeRouteId)
+    || navItems.find(item => item.compatibilityTab === activeTab)
     || navItems[0];
   const [activeContext, setActiveContext] = useState<NavContextId>(currentTab.context);
   React.useEffect(() => {
@@ -142,16 +145,20 @@ export const AdminLayout: React.FC = () => {
   const isAllowed = (item: NavItemConfig) => {
     // O BI executivo já era acessível ao perfil financeiro no Hotel OS. Preservamos
     // essa regra durante a migração, mesmo com a rota marcada como de gestão.
-    if (item.id === 'management_bi') return ['admin', 'gerente', 'financeiro'].includes(userRole);
-    if (item.managementOnly || item.id === 'command_center' || item.id === 'workspace_editor') {
+    if (item.id === 'indicadores') return ['admin', 'gerente', 'financeiro'].includes(userRole);
+    if (item.managementOnly || item.id === 'command_center' || item.id === 'workspaces') {
       return ['admin', 'gerente'].includes(userRole);
     }
-    return hasTabAccess(userRole, item.id as AdminTab);
+    return hasTabAccess(userRole, item.compatibilityTab as AdminTab);
   };
 
   const hasPermission = isAllowed(currentTab);
   const contextItems = navItems.filter(item => item.context === activeContext);
-  const changeTab = (id: ExtendedAdminTab) => setAdminActiveTab(id as AdminTab);
+  const changeItem = (item: NavItemConfig) => setAdminActiveTab(item.compatibilityTab as AdminTab);
+  const returnToDashboard = () => {
+    const dashboard = navItems.find(item => item.id === 'dashboard');
+    if (dashboard) changeItem(dashboard);
+  };
 
   return <div className={`min-h-screen bg-stone-100/90 flex flex-col text-stone-900 ${fontClass}`}>
     <KanbanLocalAutomationBridge />
@@ -168,7 +175,7 @@ export const AdminLayout: React.FC = () => {
                 onClick={() => {
                   setActiveContext(ctx.id);
                   const first = navItems.find(n => n.context === ctx.id && isAllowed(n));
-                  if (first && currentTab.context !== ctx.id) changeTab(first.id);
+                  if (first && currentTab.context !== ctx.id) changeItem(first);
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 ${selected ? 'bg-stone-900 text-white' : 'text-stone-500 hover:bg-stone-100'}`}
               >
@@ -185,11 +192,13 @@ export const AdminLayout: React.FC = () => {
           <nav className="flex items-center gap-1.5 min-w-max">
             {contextItems.map(item => {
               const Icon = item.icon;
-              const isActive = item.routeId ? item.routeId === activeRouteId : activeTab === item.id;
+              const isActive = item.id === 'command_center'
+                ? activeTab === 'command_center'
+                : item.id === activeRouteId;
               const allowed = isAllowed(item);
               return <button
-                key={`${item.routeId || 'compat'}:${item.id}`}
-                onClick={() => changeTab(item.id)}
+                key={item.id}
+                onClick={() => changeItem(item)}
                 title={item.description || item.path}
                 className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 ${isActive ? `bg-stone-900 ${theme.textAccentClass}` : allowed ? 'text-stone-600 hover:bg-stone-100' : 'text-stone-400 opacity-60'}`}
               >
@@ -208,7 +217,7 @@ export const AdminLayout: React.FC = () => {
           <div className="bg-white p-10 rounded-3xl border text-center max-w-xl mx-auto">
             <ShieldAlert className="w-8 h-8 mx-auto text-amber-600" />
             <h3 className="mt-3 font-bold">Acesso Restrito ao Módulo</h3>
-            <button onClick={() => changeTab('dashboard')} className={`mt-4 px-4 py-2 rounded-xl ${theme.buttonClass} text-xs font-bold inline-flex items-center gap-2`}>
+            <button onClick={returnToDashboard} className={`mt-4 px-4 py-2 rounded-xl ${theme.buttonClass} text-xs font-bold inline-flex items-center gap-2`}>
               Retornar à Visão Geral <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
