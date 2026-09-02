@@ -29,7 +29,7 @@ import { DEFAULT_WORKSPACE_HOTEL_ID, hydrateWorkspaceOverridesFromSupabase, subs
 
 const governanceDirectDefinition = createOfficialWorkspaceDefinition('workspace-governanca');
 
-const AuthenticatedWorkspaceRouter: React.FC = () => {
+const NovoHotelAuthenticatedRouter: React.FC = () => {
   const { currentUser, hotelConfig, setAdminActiveTab } = useHotel();
   const [sectorIds, setSectorIds] = useState<OperationalSectorId[]>([]);
   const [sectorsLoading, setSectorsLoading] = useState(true);
@@ -118,7 +118,7 @@ const MainContent: React.FC = () => {
         <div className="flex flex-col min-h-screen relative">
           <Navbar /><main className="flex-1"><HeroSection /><RoomsShowcase /><AmenitiesSection /><AboutSection /><LocationSection /><TestimonialsSection /><FaqSection /><ContactSection /></main><Footer /><FloatingWhatsapp />
         </div>
-      ) : !isAuthenticated ? <AdminLogin /> : <AuthenticatedWorkspaceRouter />}
+      ) : !isAuthenticated ? <AdminLogin /> : <NovoHotelAuthenticatedRouter />}
       <BookingModal />
       <SecurityVerificationModal />
       <ConnectionStatus />
