@@ -63,12 +63,14 @@ test('indisponibilidade canônica mantém somente a ponte de compatibilidade pre
   );
 });
 
-test('shell e router protegem a montagem das telas com a mesma decisão efetiva', () => {
+test('shell, RBAC e financeiro compartilham o mesmo tenant ativo', () => {
   const adminLayout = readFileSync('src/components/admin/AdminLayout.tsx', 'utf8');
   const app = readFileSync('src/App.tsx', 'utf8');
   const canonicalHook = readFileSync('src/navigation/useNovoHotelCanonicalRouteAccess.ts', 'utf8');
   const tenantContext = readFileSync('src/tenant/NovoHotelTenantContext.tsx', 'utf8');
   const tenantService = readFileSync('src/services/novoHotelTenantContextService.ts', 'utf8');
+  const administrativeFinance = readFileSync('src/components/admin/financial/useAdministrativeFinanceUi.ts', 'utf8');
+  const operationalRevenue = readFileSync('src/components/admin/financial/useOperationalRevenueUi.ts', 'utf8');
 
   assert.match(adminLayout, /resolveNovoHotelRouteAccess\(/);
   assert.match(adminLayout, /currentAccessState === 'loading'/);
@@ -84,6 +86,13 @@ test('shell e router protegem a montagem das telas com a mesma decisão efetiva'
   assert.match(canonicalHook, /getCanonicalRouteAccess\(routeId, tenant\.hotelId\)/);
   assert.doesNotMatch(canonicalHook, /novoHotelTenantContextService/);
   assert.doesNotMatch(canonicalHook, /hotelIdentityService\.getActiveHotelId\(\)/);
+
+  assert.match(administrativeFinance, /useNovoHotelTenant\(\)/);
+  assert.match(administrativeFinance, /tenant\?\.hotelId/);
+  assert.doesNotMatch(administrativeFinance, /hotelIdentityService/);
+  assert.match(operationalRevenue, /useNovoHotelTenant\(\)/);
+  assert.match(operationalRevenue, /tenant\?\.hotelId/);
+  assert.doesNotMatch(operationalRevenue, /hotelIdentityService/);
 
   assert.match(tenantContext, /novoHotelTenantContextService\.getActiveTenant\(\)/);
   assert.match(tenantContext, /isAuthenticated/);
