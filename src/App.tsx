@@ -23,10 +23,12 @@ import { OperacaoGeralDirectPage } from './modules/operacao/OperacaoGeralDirectP
 import { fetchUserOperationalSectorsState } from './services/userSectorService';
 import { OperationalSectorId } from './domain/operationalSectors';
 import { getNovoHotelOperationalRouteForSectors } from './navigation/novohotelRoutes';
+import { useNovoHotelNavigation } from './navigation/useNovoHotelNavigation';
 import { WorkspaceCompatibilityFallback } from './workspace-engine/WorkspaceCompatibilityFallback';
 
 const NovoHotelAuthenticatedRouter: React.FC = () => {
-  const { currentUser, hotelConfig, setAdminActiveTab } = useHotel();
+  const { currentUser, hotelConfig } = useHotel();
+  const { navigateToRoute } = useNovoHotelNavigation();
   const [sectorIds, setSectorIds] = useState<OperationalSectorId[]>([]);
   const [sectorsLoading, setSectorsLoading] = useState(true);
   const role = currentUser?.tipo_usuario || '';
@@ -57,9 +59,9 @@ const NovoHotelAuthenticatedRouter: React.FC = () => {
   }, [currentUser?.id, management]);
 
   useEffect(() => {
-    if (!stableOperationalRoute?.legacyAdminTab) return;
-    setAdminActiveTab(stableOperationalRoute.legacyAdminTab);
-  }, [stableOperationalRoute?.legacyAdminTab, setAdminActiveTab]);
+    if (!stableOperationalRoute) return;
+    navigateToRoute(stableOperationalRoute.id);
+  }, [stableOperationalRoute?.id, navigateToRoute]);
 
   if (management) return <AdminLayout />;
   if (sectorsLoading) return <div className="min-h-screen grid place-items-center bg-slate-100 text-slate-600 text-sm font-bold">Carregando ambiente operacional…</div>;
