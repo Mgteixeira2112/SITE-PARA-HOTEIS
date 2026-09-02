@@ -8,6 +8,7 @@ import {
 } from '../src/workspace-engine/workspaceOfficialFactory';
 
 const adminLayout = readFileSync('src/components/admin/AdminLayout.tsx', 'utf8');
+const moduleRenderer = readFileSync('src/components/admin/NovoHotelModuleRenderer.tsx', 'utf8');
 const factoryUi = readFileSync('src/components/admin/WorkspaceEditorModule.tsx', 'utf8');
 const runtime = readFileSync('src/workspace-engine/WidgetDrivenWorkspace.tsx', 'utf8');
 const routes = readFileSync('src/navigation/novohotelRoutes.ts', 'utf8');
@@ -51,10 +52,13 @@ test('Freeze 2.0: Workspace Financeiro de compatibilidade mantém composição c
 });
 
 test('Freeze 2.0: Financeiro administrativo entra pela tela direta do NovoHotel', () => {
-  assert.match(adminLayout, /import \{ FinancialModule \} from '\.\/FinancialModule';/);
-  assert.match(adminLayout, /activeTab === 'financial' && <FinancialModule \/>/);
+  assert.match(adminLayout, /<NovoHotelModuleRenderer activeTab=\{activeTab\} \/>/);
+  assert.match(moduleRenderer, /import \{ FinancialModule \} from '\.\/FinancialModule';/);
+  assert.match(moduleRenderer, /activeTab === 'financial' && <FinancialModule \/>/);
   assert.doesNotMatch(adminLayout, /getWorkspaceDefinition\('workspace-financeiro'/);
+  assert.doesNotMatch(moduleRenderer, /getWorkspaceDefinition\('workspace-financeiro'/);
   assert.doesNotMatch(adminLayout, /<WidgetDrivenWorkspace definition=\{financialWorkspace\}/);
+  assert.doesNotMatch(moduleRenderer, /<WidgetDrivenWorkspace definition=\{financialWorkspace\}/);
   for (const file of retiredFinancialUi) {
     assert.equal(existsSync(file), false, `caminho financeiro legado retornou: ${file}`);
   }
@@ -75,7 +79,7 @@ test('Freeze 2.0: Fábrica permanece acessível pela rota técnica do NovoHotel'
   assert.match(routes, /label: 'Fábrica de Workspaces'/);
   assert.match(routes, /managementOnly: true, technical: true/);
   assert.match(adminLayout, /route\.id === 'workspaces' \? 'workspace_editor'/);
-  assert.match(adminLayout, /activeTab === 'workspace_editor' && <WorkspaceEditorModule \/>/);
+  assert.match(moduleRenderer, /activeTab === 'workspace_editor' && <WorkspaceEditorModule \/>/);
 });
 
 test('Freeze 2.0: Desktop, Mobile e KDS continuam resolvidos no runtime único de compatibilidade', () => {
