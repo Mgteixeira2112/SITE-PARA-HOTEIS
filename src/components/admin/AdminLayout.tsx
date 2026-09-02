@@ -32,10 +32,13 @@ import { AdminTab } from '../../types';
 import { getTheme, getFontFamilyClass } from '../../utils/themeHelper';
 import {
   NOVOHOTEL_ROUTES,
-  getNovoHotelRouteByLegacyAdminTab,
   type NovoHotelRouteGroup,
   type NovoHotelRouteId,
 } from '../../navigation/novohotelRoutes';
+import {
+  getCompatibilityTabForNovoHotelRoute,
+  getNovoHotelRouteIdFromCompatibilityTab,
+} from '../../navigation/novoHotelLegacyNavigationBridge';
 
 type NavContextId = NovoHotelRouteGroup;
 type ExtendedAdminTab = NovoHotelRenderableAdminTab;
@@ -84,32 +87,32 @@ export const AdminLayout: React.FC = () => {
   const activeUsersCount = users.filter(u => u.ativo).length;
   const pendingKanbanCount = 0;
   const activeTab = adminActiveTab as ExtendedAdminTab;
-  const activeRouteId: NovoHotelRouteId | null = activeTab === 'workspace_editor'
-    ? 'workspaces'
-    : getNovoHotelRouteByLegacyAdminTab(activeTab as AdminTab)?.id || null;
+  const activeRouteId = getNovoHotelRouteIdFromCompatibilityTab(activeTab);
 
   const navItems: NavItemConfig[] = useMemo(() => {
     const routeItems = NOVOHOTEL_ROUTES
-      .filter(route => route.legacyAdminTab || route.id === 'workspaces')
-      .map<NavItemConfig>(route => ({
-        id: route.id,
-        compatibilityTab: route.id === 'workspaces' ? 'workspace_editor' : route.legacyAdminTab as AdminTab,
-        path: route.path,
-        context: route.group,
-        label: route.label,
-        icon: routeIcons[route.id],
-        badge:
-          route.id === 'recepcao' ? checkinsTodayCount :
-          route.id === 'equipe' ? activeUsersCount :
-          route.id === 'kanban' ? pendingKanbanCount :
-          undefined,
-        description: route.technical ? 'Ferramenta técnica mantida durante a transição do NovoHotel' : undefined,
-        managementOnly: route.managementOnly,
-        technical: route.technical,
-      }));
+      .map<NavItemConfig | null>(route => {
+        const compatibilityTab = getCompatibilityTabForNovoHotelRoute(route.id);
+        if (!compatibilityTab) return null;
+        return {
+          id: route.id,
+          compatibilityTab,
+          path: route.path,
+          context: route.group,
+          label: route.label,
+          icon: routeIcons[route.id],
+          badge:
+            route.id === 'recepcao' ? checkinsTodayCount :
+            route.id === 'equipe' ? activeUsersCount :
+            route.id === 'kanban' ? pendingKanbanCount :
+            undefined,
+          description: route.technical ? 'Ferramenta técnica mantida durante a transição do NovoHotel' : undefined,
+          managementOnly: route.managementOnly,
+          technical: route.technical,
+        };
+      })
+      .filter((item): item is NavItemConfig => item !== null);
 
-    // Central Hotel OS continua acessível durante a transição, mas não define a
-    // navegação principal do NovoHotel nem cria uma nova rota funcional.
     routeItems.push({
       id: 'command_center',
       compatibilityTab: 'command_center',
@@ -131,8 +134,6 @@ export const AdminLayout: React.FC = () => {
     { id: 'sistema', label: 'Sistema', icon: Sliders },
   ];
 
-  // A identidade da navegação já é a rota canônica. compatibilityTab existe
-  // somente para alimentar o estado legado até a sua remoção definitiva.
   const currentTab = navItems.find(item => item.id === activeRouteId)
     || navItems.find(item => item.compatibilityTab === activeTab)
     || navItems[0];
@@ -143,8 +144,6 @@ export const AdminLayout: React.FC = () => {
 
   const userRole = currentUser?.tipo_usuario || 'recepcionista';
   const isAllowed = (item: NavItemConfig) => {
-    // O BI executivo já era acessível ao perfil financeiro no Hotel OS. Preservamos
-    // essa regra durante a migração, mesmo com a rota marcada como de gestão.
     if (item.id === 'indicadores') return ['admin', 'gerente', 'financeiro'].includes(userRole);
     if (item.managementOnly || item.id === 'command_center' || item.id === 'workspaces') {
       return ['admin', 'gerente'].includes(userRole);
@@ -154,10 +153,13 @@ export const AdminLayout: React.FC = () => {
 
   const hasPermission = isAllowed(currentTab);
   const contextItems = navItems.filter(item => item.context === activeContext);
-  const changeItem = (item: NavItemConfig) => setAdminActiveTab(item.compatibilityTab as AdminTab);
+
+  // A navegação da interface trabalha com IDs canônicos. Esta função é a única
+  // ponte local que ainda espelha a seleção no estado legado do HotelContext.
+  const navigateToItem = (item: NavItemConfig) => setAdminActiveTab(item.compatibilityTab as AdminTab);
   const returnToDashboard = () => {
     const dashboard = navItems.find(item => item.id === 'dashboard');
-    if (dashboard) changeItem(dashboard);
+    if (dashboard) navigateToItem(dashboard);
   };
 
   return <div className={`min-h-screen bg-stone-100/90 flex flex-col text-stone-900 ${fontClass}`}>
@@ -175,7 +177,7 @@ export const AdminLayout: React.FC = () => {
                 onClick={() => {
                   setActiveContext(ctx.id);
                   const first = navItems.find(n => n.context === ctx.id && isAllowed(n));
-                  if (first && currentTab.context !== ctx.id) changeItem(first);
+                  if (first && currentTab.context !== ctx.id) navigateToItem(first);
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 ${selected ? 'bg-stone-900 text-white' : 'text-stone-500 hover:bg-stone-100'}`}
               >
@@ -198,7 +200,7 @@ export const AdminLayout: React.FC = () => {
               const allowed = isAllowed(item);
               return <button
                 key={item.id}
-                onClick={() => changeItem(item)}
+                onClick={() => navigateToItem(item)}
                 title={item.description || item.path}
                 className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 ${isActive ? `bg-stone-900 ${theme.textAccentClass}` : allowed ? 'text-stone-600 hover:bg-stone-100' : 'text-stone-400 opacity-60'}`}
               >
