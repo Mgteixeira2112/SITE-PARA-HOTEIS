@@ -28,7 +28,6 @@ import {
   LayoutTemplate,
   Globe2,
 } from 'lucide-react';
-import { AdminTab } from '../../types';
 import { getTheme, getFontFamilyClass } from '../../utils/themeHelper';
 import {
   NOVOHOTEL_ROUTES,
@@ -36,6 +35,7 @@ import {
   type NovoHotelRouteId,
 } from '../../navigation/novohotelRoutes';
 import { getCompatibilityTabForNovoHotelRoute } from '../../navigation/novoHotelLegacyNavigationBridge';
+import { canAccessNovoHotelRoute } from '../../navigation/novoHotelRouteAccess';
 import { useNovoHotelNavigation } from '../../navigation/useNovoHotelNavigation';
 
 type NavContextId = NovoHotelRouteGroup;
@@ -147,11 +147,8 @@ export const AdminLayout: React.FC = () => {
 
   const userRole = currentUser?.tipo_usuario || 'recepcionista';
   const isAllowed = (item: NavItemConfig) => {
-    if (item.id === 'indicadores') return ['admin', 'gerente', 'financeiro'].includes(userRole);
-    if (item.managementOnly || item.id === 'command_center' || item.id === 'workspaces') {
-      return ['admin', 'gerente'].includes(userRole);
-    }
-    return hasTabAccess(userRole, item.compatibilityTab as AdminTab);
+    if (item.id === 'command_center') return ['admin', 'gerente'].includes(userRole);
+    return canAccessNovoHotelRoute(item.id, userRole, hasTabAccess);
   };
 
   const hasPermission = isAllowed(currentTab);
