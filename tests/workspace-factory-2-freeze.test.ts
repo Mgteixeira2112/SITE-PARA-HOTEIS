@@ -10,9 +10,9 @@ import {
 const adminLayout = readFileSync('src/components/admin/AdminLayout.tsx', 'utf8');
 const factoryUi = readFileSync('src/components/admin/WorkspaceEditorModule.tsx', 'utf8');
 const runtime = readFileSync('src/workspace-engine/WidgetDrivenWorkspace.tsx', 'utf8');
+const routes = readFileSync('src/navigation/novohotelRoutes.ts', 'utf8');
 
 const retiredFinancialUi = [
-  'src/components/admin/FinancialModule.tsx',
   'src/components/admin/financial/FinancialOverviewTab.tsx',
   'src/components/admin/financial/TransactionsAuditTab.tsx',
   'src/components/admin/financial/PixConfigTab.tsx',
@@ -35,7 +35,7 @@ test('Freeze 2.0: catálogo oficial mantém oito Workspaces gerados pela Fábric
   ]);
 });
 
-test('Freeze 2.0: Workspace Financeiro usa somente composição certificada', () => {
+test('Freeze 2.0: Workspace Financeiro de compatibilidade mantém composição certificada', () => {
   const financial = createOfficialWorkspaceDefinition('workspace-financeiro');
   assert.equal(financial.layout, 'management');
   assert.deepEqual(financial.sectors, []);
@@ -50,9 +50,11 @@ test('Freeze 2.0: Workspace Financeiro usa somente composição certificada', ()
   assert.equal(financial.presentation?.devices?.kds, 'disabled');
 });
 
-test('Freeze 2.0: Financeiro administrativo entra pelo runtime oficial e não por tela paralela', () => {
-  assert.match(adminLayout, /getWorkspaceDefinition\('workspace-financeiro'/);
-  assert.match(adminLayout, /<WidgetDrivenWorkspace definition=\{financialWorkspace\}/);
+test('Freeze 2.0: Financeiro administrativo entra pela tela direta do NovoHotel', () => {
+  assert.match(adminLayout, /import \{ FinancialModule \} from '\.\/FinancialModule';/);
+  assert.match(adminLayout, /activeTab === 'financial' && <FinancialModule \/>/);
+  assert.doesNotMatch(adminLayout, /getWorkspaceDefinition\('workspace-financeiro'/);
+  assert.doesNotMatch(adminLayout, /<WidgetDrivenWorkspace definition=\{financialWorkspace\}/);
   for (const file of retiredFinancialUi) {
     assert.equal(existsSync(file), false, `caminho financeiro legado retornou: ${file}`);
   }
@@ -68,7 +70,15 @@ test('Freeze 2.0: Fábrica separa templates e instâncias persistidas', () => {
   assert.match(factoryUi, /loadWorkspaceOverrides\(hotelId\)/);
 });
 
-test('Freeze 2.0: Desktop, Mobile e KDS continuam resolvidos no runtime único', () => {
+test('Freeze 2.0: Fábrica permanece acessível pela rota técnica do NovoHotel', () => {
+  assert.match(routes, /id: 'workspaces', path: '\/app\/sistema\/workspaces'/);
+  assert.match(routes, /label: 'Fábrica de Workspaces'/);
+  assert.match(routes, /managementOnly: true, technical: true/);
+  assert.match(adminLayout, /route\.id === 'workspaces' \? 'workspace_editor'/);
+  assert.match(adminLayout, /activeTab === 'workspace_editor' && <WorkspaceEditorModule \/>/);
+});
+
+test('Freeze 2.0: Desktop, Mobile e KDS continuam resolvidos no runtime único de compatibilidade', () => {
   assert.match(runtime, /resolveWidgetPresentation\(definition, widget, viewport\)/);
   assert.match(runtime, /viewport === 'desktop'/);
   assert.match(runtime, /viewport === 'mobile'/);
