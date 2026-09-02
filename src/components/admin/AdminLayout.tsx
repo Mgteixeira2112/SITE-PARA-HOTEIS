@@ -148,10 +148,12 @@ export const AdminLayout: React.FC = () => {
 
   const userRole = currentUser?.tipo_usuario || 'recepcionista';
   const isAllowed = (item: NavItemConfig) => {
+    // O BI executivo já era acessível ao perfil financeiro no Hotel OS. Preservamos
+    // essa regra durante a migração, mesmo com a rota marcada como de gestão.
+    if (item.id === 'management_bi') return ['admin', 'gerente', 'financeiro'].includes(userRole);
     if (item.managementOnly || item.id === 'command_center' || item.id === 'workspace_editor') {
       return ['admin', 'gerente'].includes(userRole);
     }
-    if (item.id === 'management_bi') return ['admin', 'gerente', 'financeiro'].includes(userRole);
     return hasTabAccess(userRole, item.id as AdminTab);
   };
 
