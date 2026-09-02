@@ -39,6 +39,7 @@ import {
   getCompatibilityTabForNovoHotelRoute,
   getNovoHotelRouteIdFromCompatibilityTab,
 } from '../../navigation/novoHotelLegacyNavigationBridge';
+import { useNovoHotelNavigation } from '../../navigation/useNovoHotelNavigation';
 
 type NavContextId = NovoHotelRouteGroup;
 type ExtendedAdminTab = NovoHotelRenderableAdminTab;
@@ -80,13 +81,14 @@ const routeIcons: Record<NovoHotelRouteId, React.FC<{ className?: string }>> = {
 };
 
 export const AdminLayout: React.FC = () => {
-  const { hotelConfig, adminActiveTab, setAdminActiveTab, reservations, users, currentUser, hasTabAccess } = useHotel();
+  const { hotelConfig, reservations, users, currentUser, hasTabAccess } = useHotel();
+  const { activeCompatibilityTab, navigateToRoute, navigateToCompatibilityTab } = useNovoHotelNavigation();
   const theme = getTheme(hotelConfig?.tema_cor);
   const fontClass = getFontFamilyClass(hotelConfig?.tipografia);
   const checkinsTodayCount = reservations.filter((r) => r.status === 'confirmada').length;
   const activeUsersCount = users.filter(u => u.ativo).length;
   const pendingKanbanCount = 0;
-  const activeTab = adminActiveTab as ExtendedAdminTab;
+  const activeTab = activeCompatibilityTab as ExtendedAdminTab;
   const activeRouteId = getNovoHotelRouteIdFromCompatibilityTab(activeTab);
 
   const navItems: NavItemConfig[] = useMemo(() => {
@@ -154,13 +156,14 @@ export const AdminLayout: React.FC = () => {
   const hasPermission = isAllowed(currentTab);
   const contextItems = navItems.filter(item => item.context === activeContext);
 
-  // A navegação da interface trabalha com IDs canônicos. Esta função é a única
-  // ponte local que ainda espelha a seleção no estado legado do HotelContext.
-  const navigateToItem = (item: NavItemConfig) => setAdminActiveTab(item.compatibilityTab as AdminTab);
-  const returnToDashboard = () => {
-    const dashboard = navItems.find(item => item.id === 'dashboard');
-    if (dashboard) navigateToItem(dashboard);
+  const navigateToItem = (item: NavItemConfig) => {
+    if (item.id === 'command_center') {
+      navigateToCompatibilityTab('command_center');
+      return;
+    }
+    navigateToRoute(item.id);
   };
+  const returnToDashboard = () => navigateToRoute('dashboard');
 
   return <div className={`min-h-screen bg-stone-100/90 flex flex-col text-stone-900 ${fontClass}`}>
     <KanbanLocalAutomationBridge />
