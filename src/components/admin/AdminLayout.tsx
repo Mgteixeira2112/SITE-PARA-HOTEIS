@@ -35,10 +35,7 @@ import {
   type NovoHotelRouteGroup,
   type NovoHotelRouteId,
 } from '../../navigation/novohotelRoutes';
-import {
-  getCompatibilityTabForNovoHotelRoute,
-  getNovoHotelRouteIdFromCompatibilityTab,
-} from '../../navigation/novoHotelLegacyNavigationBridge';
+import { getCompatibilityTabForNovoHotelRoute } from '../../navigation/novoHotelLegacyNavigationBridge';
 import { useNovoHotelNavigation } from '../../navigation/useNovoHotelNavigation';
 
 type NavContextId = NovoHotelRouteGroup;
@@ -82,14 +79,18 @@ const routeIcons: Record<NovoHotelRouteId, React.FC<{ className?: string }>> = {
 
 export const AdminLayout: React.FC = () => {
   const { hotelConfig, reservations, users, currentUser, hasTabAccess } = useHotel();
-  const { activeCompatibilityTab, navigateToRoute, navigateToCompatibilityTab } = useNovoHotelNavigation();
+  const {
+    activeRouteId,
+    activeCompatibilityTab,
+    navigateToRoute,
+    navigateToCompatibilityTab,
+  } = useNovoHotelNavigation();
   const theme = getTheme(hotelConfig?.tema_cor);
   const fontClass = getFontFamilyClass(hotelConfig?.tipografia);
   const checkinsTodayCount = reservations.filter((r) => r.status === 'confirmada').length;
   const activeUsersCount = users.filter(u => u.ativo).length;
   const pendingKanbanCount = 0;
   const activeTab = activeCompatibilityTab as ExtendedAdminTab;
-  const activeRouteId = getNovoHotelRouteIdFromCompatibilityTab(activeTab);
 
   const navItems: NavItemConfig[] = useMemo(() => {
     const routeItems = NOVOHOTEL_ROUTES
