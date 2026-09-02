@@ -27,10 +27,12 @@ import { NovoHotelNavigationProvider } from './navigation/NovoHotelNavigationCon
 import { resolveNovoHotelRouteAccess } from './navigation/resolveNovoHotelRouteAccess';
 import { useNovoHotelCanonicalRouteAccess } from './navigation/useNovoHotelCanonicalRouteAccess';
 import { useNovoHotelNavigation } from './navigation/useNovoHotelNavigation';
+import { NovoHotelTenantProvider, useNovoHotelTenant } from './tenant/NovoHotelTenantContext';
 import { WorkspaceCompatibilityFallback } from './workspace-engine/WorkspaceCompatibilityFallback';
 
 const NovoHotelAuthenticatedRouter: React.FC = () => {
   const { currentUser, hotelConfig, hasTabAccess } = useHotel();
+  const { tenant } = useNovoHotelTenant();
   const { navigateToRoute } = useNovoHotelNavigation();
   const { getCanonicalDecision, loading: canonicalAccessLoading } = useNovoHotelCanonicalRouteAccess();
   const [sectorIds, setSectorIds] = useState<OperationalSectorId[]>([]);
@@ -95,7 +97,7 @@ const NovoHotelAuthenticatedRouter: React.FC = () => {
   return <WorkspaceCompatibilityFallback
     userId={currentUser?.id}
     sectorIds={sectorIds}
-    hotelId={hotelConfig?.id}
+    hotelId={tenant?.hotelId || hotelConfig?.id}
   />;
 };
 
@@ -118,11 +120,13 @@ const MainContent: React.FC = () => {
 export default function App() {
   return (
     <HotelProvider>
-      <NovoHotelNavigationProvider>
-        <FrigobarProvider>
-          <MainContent />
-        </FrigobarProvider>
-      </NovoHotelNavigationProvider>
+      <NovoHotelTenantProvider>
+        <NovoHotelNavigationProvider>
+          <FrigobarProvider>
+            <MainContent />
+          </FrigobarProvider>
+        </NovoHotelNavigationProvider>
+      </NovoHotelTenantProvider>
     </HotelProvider>
   );
 }
