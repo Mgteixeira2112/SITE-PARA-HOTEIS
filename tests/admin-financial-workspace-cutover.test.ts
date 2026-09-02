@@ -7,9 +7,9 @@ const moduleRenderer = readFileSync('src/components/admin/NovoHotelModuleRendere
 const financialModule = readFileSync('src/components/admin/FinancialModule.tsx', 'utf8');
 
 test('AdminLayout resolve Financeiro pela tela direta do NovoHotel sem carregar Workspace runtime', () => {
-  assert.match(adminLayout, /<NovoHotelModuleRenderer activeTab=\{activeTab\} \/>/);
+  assert.match(adminLayout, /<NovoHotelModuleRenderer routeId=\{activeRouteId\} activeTab=\{activeTab\} \/>/);
   assert.match(moduleRenderer, /import \{ FinancialModule \} from '\.\/FinancialModule';/);
-  assert.match(moduleRenderer, /activeTab === 'financial' && <FinancialModule \/>/);
+  assert.match(moduleRenderer, /routeId === 'financeiro' && <FinancialModule \/>/);
   assert.doesNotMatch(adminLayout, /getWorkspaceDefinition\('workspace-financeiro'/);
   assert.doesNotMatch(moduleRenderer, /getWorkspaceDefinition\('workspace-financeiro'/);
   assert.doesNotMatch(adminLayout, /<WidgetDrivenWorkspace definition=\{financialWorkspace\}/);
