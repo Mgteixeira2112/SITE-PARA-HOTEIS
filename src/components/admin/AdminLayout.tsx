@@ -35,7 +35,7 @@ import {
   type NovoHotelRouteId,
 } from '../../navigation/novohotelRoutes';
 import { getCompatibilityTabForNovoHotelRoute } from '../../navigation/novoHotelLegacyNavigationBridge';
-import { canAccessNovoHotelRoute } from '../../navigation/novoHotelRouteAccess';
+import { resolveNovoHotelRouteAccess, type NovoHotelRouteAccessState } from '../../navigation/resolveNovoHotelRouteAccess';
 import { useNovoHotelCanonicalRouteAccess } from '../../navigation/useNovoHotelCanonicalRouteAccess';
 import { useNovoHotelNavigation } from '../../navigation/useNovoHotelNavigation';
 
@@ -86,7 +86,7 @@ export const AdminLayout: React.FC = () => {
     navigateToRoute,
     navigateToCompatibilityTab,
   } = useNovoHotelNavigation();
-  const { getCanonicalDecision } = useNovoHotelCanonicalRouteAccess();
+  const { getCanonicalDecision, loading: canonicalAccessLoading } = useNovoHotelCanonicalRouteAccess();
   const theme = getTheme(hotelConfig?.tema_cor);
   const fontClass = getFontFamilyClass(hotelConfig?.tipografia);
   const checkinsTodayCount = reservations.filter((r) => r.status === 'confirmada').length;
@@ -148,18 +148,22 @@ export const AdminLayout: React.FC = () => {
   }, [activeTab, activeRouteId, currentTab.context]);
 
   const userRole = currentUser?.tipo_usuario || 'recepcionista';
-  const isAllowed = (item: NavItemConfig) => {
-    if (item.id === 'command_center') return ['admin', 'gerente'].includes(userRole);
-
-    const canonicalDecision = getCanonicalDecision(item.id);
-    if (canonicalDecision?.source === 'canonical') {
-      return canonicalDecision.allowed === true;
+  const getAccessState = (item: NavItemConfig): NovoHotelRouteAccessState => {
+    if (item.id === 'command_center') {
+      return ['admin', 'gerente'].includes(userRole) ? 'allowed' : 'denied';
     }
 
-    return canAccessNovoHotelRoute(item.id, userRole, hasTabAccess);
+    return resolveNovoHotelRouteAccess(
+      item.id,
+      userRole,
+      hasTabAccess,
+      getCanonicalDecision(item.id),
+      canonicalAccessLoading,
+    );
   };
+  const isAllowed = (item: NavItemConfig) => getAccessState(item) === 'allowed';
 
-  const hasPermission = isAllowed(currentTab);
+  const currentAccessState = getAccessState(currentTab);
   const contextItems = navItems.filter(item => item.context === activeContext);
 
   const navigateToItem = (item: NavItemConfig) => {
@@ -206,7 +210,8 @@ export const AdminLayout: React.FC = () => {
               const isActive = item.id === 'command_center'
                 ? activeTab === 'command_center'
                 : item.id === activeRouteId;
-              const allowed = isAllowed(item);
+              const accessState = getAccessState(item);
+              const allowed = accessState === 'allowed';
               return <button
                 key={item.id}
                 onClick={() => navigateToItem(item)}
@@ -224,7 +229,11 @@ export const AdminLayout: React.FC = () => {
       </div>
 
       <main>
-        {!hasPermission ? (
+        {currentAccessState === 'loading' ? (
+          <div className="bg-white p-10 rounded-3xl border text-center max-w-xl mx-auto text-sm font-bold text-stone-500">
+            Validando permissões do hotel…
+          </div>
+        ) : currentAccessState === 'denied' ? (
           <div className="bg-white p-10 rounded-3xl border text-center max-w-xl mx-auto">
             <ShieldAlert className="w-8 h-8 mx-auto text-amber-600" />
             <h3 className="mt-3 font-bold">Acesso Restrito ao Módulo</h3>
