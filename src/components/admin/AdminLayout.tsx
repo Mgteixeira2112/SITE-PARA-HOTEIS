@@ -18,8 +18,7 @@ import { WorkspaceEditorModule } from './WorkspaceEditorModule';
 import { PDVPage } from './PDVPage';
 import { KDSPage } from './KDSPage';
 import { HotelOSCommandCenter } from './HotelOSCommandCenter';
-import { WidgetDrivenWorkspace } from '../../workspace-engine/WidgetDrivenWorkspace';
-import { getWorkspaceDefinition } from '../../workspace-engine/registry';
+import { FinancialModule } from './FinancialModule';
 import {
   LayoutDashboard,
   BarChart3,
@@ -30,7 +29,6 @@ import {
   DollarSign,
   ShoppingBag,
   Bot,
-  Palette,
   UserCheck,
   ShieldAlert,
   Lock,
@@ -99,7 +97,6 @@ export const AdminLayout: React.FC = () => {
   const activeUsersCount = users.filter(u => u.ativo).length;
   const pendingKanbanCount = 0;
   const activeTab = adminActiveTab as ExtendedAdminTab;
-  const financialWorkspace = useMemo(() => getWorkspaceDefinition('workspace-financeiro', hotelConfig?.id), [hotelConfig?.id]);
 
   const navItems: NavItemConfig[] = useMemo(() => {
     const routeItems = NOVOHOTEL_ROUTES
@@ -231,7 +228,7 @@ export const AdminLayout: React.FC = () => {
           {activeTab === 'checkin_out' && <CheckInOutModule />}
           {activeTab === 'rooms' && <RoomsModule />}
           {activeTab === 'guests' && <GuestsModule />}
-          {activeTab === 'financial' && financialWorkspace && <WidgetDrivenWorkspace definition={financialWorkspace} />}
+          {activeTab === 'financial' && <FinancialModule />}
           {activeTab === 'frigobar' && <FrigobarModule />}
           {activeTab === 'automation' && <AutomationModule />}
           {activeTab === 'users' && <UsersOperationalAccessModule />}
