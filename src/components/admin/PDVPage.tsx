@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useHotel } from '../../context/HotelContext';
 import { useNovoHotelTenant } from '../../tenant/NovoHotelTenantContext';
 import { criarPedidoPdv, finalizarPedidoPdv, listarCaixas, listarProdutosPdv, listarSessoesCaixa, abrirCaixa, PdvProduct } from '../../services/pdvService';
+import { SectionTitle } from '../common/DesignSystem';
 
 type CartItem = PdvProduct & { quantidade: number };
 const money = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -161,31 +162,33 @@ export const PDVPage: React.FC = () => {
   return (
     <div className="min-h-full bg-stone-100 p-3 text-stone-900 md:p-6">
       <div className="mx-auto max-w-7xl">
-        <header className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Hotel OS</p>
-            <h1 className="text-2xl font-black">PDV + Room Service</h1>
-            <p className="mt-1 text-[11px] text-stone-500">F2 pesquisar · F8 finalizar · ESC limpar</p>
-          </div>
-          <div className="flex gap-2 rounded-xl bg-white p-1 shadow-sm">
-            <button
-              onClick={() => setMode('balcao')}
-              className={`touch-target rounded-lg px-4 py-2 text-sm font-bold ${
-                mode === 'balcao' ? 'bg-stone-900 text-white' : ''
-              }`}
-            >
-              Balcão
-            </button>
-            <button
-              onClick={() => setMode('quarto')}
-              className={`touch-target rounded-lg px-4 py-2 text-sm font-bold ${
-                mode === 'quarto' ? 'bg-stone-900 text-white' : ''
-              }`}
-            >
-              Quarto
-            </button>
-          </div>
-        </header>
+        <SectionTitle
+          title="PDV + Room Service"
+          description="Venda no balcão ou lançamento direto no quarto · F2 pesquisar · F8 finalizar · ESC limpar"
+          className="mb-5"
+          actions={(
+            <div className="flex gap-2 rounded-xl border border-stone-200 bg-white p-1 shadow-xs">
+              <button
+                type="button"
+                onClick={() => setMode('balcao')}
+                className={`touch-target rounded-lg px-4 py-2 text-sm font-bold transition ${
+                  mode === 'balcao' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'
+                }`}
+              >
+                Balcão
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('quarto')}
+                className={`touch-target rounded-lg px-4 py-2 text-sm font-bold transition ${
+                  mode === 'quarto' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'
+                }`}
+              >
+                Quarto
+              </button>
+            </div>
+          )}
+        />
 
         {mode === 'quarto' && (
           <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
