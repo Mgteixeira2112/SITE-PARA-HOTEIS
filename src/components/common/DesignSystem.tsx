@@ -1,4 +1,5 @@
 import React, { useEffect, useId } from 'react';
+import { createPortal } from 'react-dom';
 
 export type SurfaceTone = 'default' | 'muted' | 'success' | 'warning' | 'info' | 'danger';
 
@@ -127,24 +128,39 @@ export const Modal: React.FC<ModalProps> = ({
   const descriptionId = useId();
 
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open || typeof document === 'undefined') return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || typeof document === 'undefined') return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-stone-950/75 p-4 backdrop-blur-sm">
+  const modal = (
+    <div
+      className="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-stone-950/75 p-4 backdrop-blur-sm"
+      role="presentation"
+      onMouseDown={event => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         className={`flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl ${modalSizeClasses[size]}`}
+        onMouseDown={event => event.stopPropagation()}
       >
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-stone-100 px-6 py-5">
           <div className="min-w-0">
@@ -160,4 +176,6 @@ export const Modal: React.FC<ModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 };
