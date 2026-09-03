@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AlertTriangle, BellRing, CircleAlert } from 'lucide-react';
 import { metricService, type DashboardAlert } from '../../services/metricService';
 import { tenantService } from '../../services/tenantService';
+import { Badge, Card, SectionTitle } from '../common/DesignSystem';
 
 export const DashboardAlertsWidget: React.FC = () => {
   const [alerts, setAlerts] = useState<DashboardAlert[]>([]);
@@ -19,14 +20,35 @@ export const DashboardAlertsWidget: React.FC = () => {
   }, []);
 
   return (
-    <section className="bg-white rounded-2xl border border-stone-200 p-5 mt-4">
-      <div className="flex items-center justify-between gap-3">
-        <div><h3 className="font-bold text-stone-900 flex items-center gap-2"><BellRing className="w-4 h-4" /> Alertas gerenciais</h3><p className="text-xs text-stone-500 mt-1">Alertas derivados dos dados operacionais oficiais.</p></div>
-        <span className="text-[10px] font-black text-stone-400">{alerts.length} ATIVOS</span>
+    <Card padding="md" className="mt-4">
+      <SectionTitle
+        title="Alertas gerenciais"
+        description="Alertas derivados dos dados operacionais oficiais."
+        actions={<Badge>{alerts.length} ativos</Badge>}
+      />
+
+      <div className="mt-4 grid gap-2 md:grid-cols-2">
+        {alerts.length === 0 ? (
+          <Card tone="muted" padding="sm" className="text-xs text-stone-500">
+            Nenhum alerta ativo no escopo autorizado.
+          </Card>
+        ) : alerts.map(alert => (
+          <Card key={alert.id} tone="muted" padding="sm" className="flex gap-3 shadow-none">
+            <span className={alert.severity === 'CRITICAL' ? 'text-rose-600' : 'text-amber-600'}>
+              {alert.severity === 'CRITICAL'
+                ? <CircleAlert className="h-4 w-4" aria-hidden="true" />
+                : <AlertTriangle className="h-4 w-4" aria-hidden="true" />}
+            </span>
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold text-stone-900">
+                <BellRing className="h-3.5 w-3.5 text-stone-400" aria-hidden="true" />
+                {alert.title}
+              </div>
+              <div className="mt-1 text-[11px] text-stone-500">{alert.description}</div>
+            </div>
+          </Card>
+        ))}
       </div>
-      <div className="grid md:grid-cols-2 gap-2 mt-4">
-        {alerts.length === 0 ? <div className="text-xs text-stone-500 bg-stone-50 rounded-xl p-4">Nenhum alerta ativo no escopo autorizado.</div> : alerts.map(alert => <div key={alert.id} className="rounded-xl border border-stone-100 bg-stone-50 p-3 flex gap-3"><span className={alert.severity==='CRITICAL' ? 'text-red-600' : 'text-amber-600'}>{alert.severity==='CRITICAL' ? <CircleAlert className="w-4 h-4"/> : <AlertTriangle className="w-4 h-4"/>}</span><div><div className="text-xs font-bold text-stone-900">{alert.title}</div><div className="text-[11px] text-stone-500 mt-1">{alert.description}</div></div></div>)}
-      </div>
-    </section>
+    </Card>
   );
 };
