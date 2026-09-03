@@ -277,7 +277,7 @@ export const PDVPage: React.FC = () => {
                       onClick={() =>
                         setCart(c =>
                           c
-                            .map(x => (x.id === i.id ? { ...x, quantidade: Math.max(0, x.quantidade - 1 } : x))
+                            .map(x => (x.id === i.id ? { ...x, quantidade: Math.max(0, x.quantidade - 1) } : x))
                             .filter(x => x.quantidade > 0)
                         )
                       }
