@@ -4,6 +4,7 @@ import { FinancialSummaryWidget } from '../../workspace-engine/widgets/Financial
 import { FinancialReceivablesWidget, FinancialPayablesWidget } from '../../workspace-engine/widgets/AdministrativeFinanceAccountWidgets';
 import { FinancialTransactionsWidget } from '../../workspace-engine/widgets/FinancialTransactionsWidget';
 import type { WorkspaceDefinition, WorkspaceWidgetDefinition } from '../../workspace-engine/types';
+import { SectionTitle } from '../common/DesignSystem';
 
 /**
  * Contexto estático de compatibilidade para os renderers financeiros existentes.
@@ -39,11 +40,10 @@ const TRANSACTIONS = widget('novohotel-finance-transactions', 'financial-transac
 
 export const FinancialModule: React.FC = () => (
   <section className="space-y-4" data-novohotel-financial-module>
-    <div>
-      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">NovoHotel • Financeiro</p>
-      <h2 className="mt-1 text-2xl font-black text-slate-950">Financeiro</h2>
-      <p className="mt-1 text-xs text-slate-500">Receitas, contas e transações a partir das fontes financeiras oficiais do hotel.</p>
-    </div>
+    <SectionTitle
+      title="Financeiro"
+      description="Receitas, contas e transações a partir das fontes financeiras oficiais do hotel."
+    />
 
     <CertifiedFinancialOverviewWidget workspace={FINANCIAL_SCREEN_CONTEXT} widget={OVERVIEW} />
     <FinancialSummaryWidget workspace={FINANCIAL_SCREEN_CONTEXT} widget={SUMMARY} />
