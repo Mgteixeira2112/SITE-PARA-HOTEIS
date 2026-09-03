@@ -98,7 +98,7 @@ export const AdminLayout: React.FC = () => {
     const routeItems = NOVOHOTEL_ROUTES
       .map<NavItemConfig | null>(route => {
         const compatibilityTab = getCompatibilityTabForNovoHotelRoute(route.id);
-        const isDirectRouteReady = route.id === 'manutencao';
+        const isDirectRouteReady = route.id === 'manutencao' || route.id === 'governanca';
         if (!compatibilityTab && !isDirectRouteReady) return null;
         return {
           id: route.id,
