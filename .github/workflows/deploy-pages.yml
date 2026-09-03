@@ -40,11 +40,16 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Create cache-bypass homologation entry
+        run: cp dist/index.html dist/homologacao.html
+
       - name: Verify build output
         run: |
           test -f dist/index.html
+          test -f dist/homologacao.html
           test -f dist/manifest.webmanifest
           grep -q '/SITE-PARA-HOTEIS/assets/' dist/index.html
+          grep -q '/SITE-PARA-HOTEIS/assets/' dist/homologacao.html
           ! grep -q 'src="/src/main.tsx"' dist/index.html
           find dist -maxdepth 2 -type f | sort | head -100
 
