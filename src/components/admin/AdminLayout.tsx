@@ -98,7 +98,7 @@ export const AdminLayout: React.FC = () => {
     const routeItems = NOVOHOTEL_ROUTES
       .map<NavItemConfig | null>(route => {
         const compatibilityTab = getCompatibilityTabForNovoHotelRoute(route.id);
-        const isDirectRouteReady = route.id === 'manutencao' || route.id === 'governanca';
+        const isDirectRouteReady = route.directOperational === true;
         if (!compatibilityTab && !isDirectRouteReady) return null;
         return {
           id: route.id,
@@ -137,7 +137,7 @@ export const AdminLayout: React.FC = () => {
     { id: 'operacao', label: 'Operação', icon: Layers },
     { id: 'vendas', label: 'Vendas & Consumo', icon: UtensilsCrossed },
     { id: 'gestao', label: 'Gestão & BI', icon: Briefcase },
-    { id: 'sistema', label: 'Sistema', icon: Sliders },
+    { id: 'sistema', label: 'Sistema & Auditoria', icon: Sliders },
   ];
 
   const currentTab = navItems.find(item => item.id === activeRouteId)
