@@ -1,9 +1,13 @@
 # GitHub Pages must be configured in Settings > Pages with Source = GitHub Actions.
+# The transformation branch is intentionally published as the live homologation environment
+# so visual/operational changes can be tested continuously without touching the NOVOHOTEL repo.
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - refactor/novohotel-saas-simplificado
   workflow_dispatch:
 
 permissions:
