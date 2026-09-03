@@ -97,6 +97,76 @@ export const SectionTitle: React.FC<SectionTitleProps> = ({ title, description, 
   </div>
 );
 
+const formControlClasses = 'w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 shadow-xs transition placeholder:text-stone-400 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-900/10 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500';
+
+export interface FormFieldProps {
+  label: string;
+  children: React.ReactNode;
+  htmlFor?: string;
+  hint?: string;
+  error?: string;
+  required?: boolean;
+  className?: string;
+}
+
+export const FormField: React.FC<FormFieldProps> = ({
+  label,
+  children,
+  htmlFor,
+  hint,
+  error,
+  required = false,
+  className = '',
+}) => (
+  <div className={`space-y-1.5 ${className}`}>
+    <label htmlFor={htmlFor} className="block text-xs font-bold text-stone-700">
+      {label}{required && <span className="ml-1 text-rose-700" aria-hidden="true">*</span>}
+    </label>
+    {children}
+    {error ? (
+      <p className="text-xs font-semibold text-rose-700" role="alert">{error}</p>
+    ) : hint ? (
+      <p className="text-xs text-stone-500">{hint}</p>
+    ) : null}
+  </div>
+);
+
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  invalid?: boolean;
+}
+
+export const Input: React.FC<InputProps> = ({ className = '', invalid = false, ...props }) => (
+  <input
+    aria-invalid={invalid || undefined}
+    className={`${formControlClasses} ${invalid ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : ''} ${className}`}
+    {...props}
+  />
+);
+
+export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  invalid?: boolean;
+}
+
+export const Select: React.FC<SelectProps> = ({ className = '', invalid = false, ...props }) => (
+  <select
+    aria-invalid={invalid || undefined}
+    className={`${formControlClasses} ${invalid ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : ''} ${className}`}
+    {...props}
+  />
+);
+
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  invalid?: boolean;
+}
+
+export const Textarea: React.FC<TextareaProps> = ({ className = '', invalid = false, ...props }) => (
+  <textarea
+    aria-invalid={invalid || undefined}
+    className={`${formControlClasses} min-h-24 resize-y ${invalid ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : ''} ${className}`}
+    {...props}
+  />
+);
+
 export interface ModalProps {
   open: boolean;
   title: string;
