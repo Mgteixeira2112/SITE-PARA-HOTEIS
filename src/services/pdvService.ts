@@ -9,6 +9,6 @@ export async function listarSessoesCaixa(hotelId:string){ return pdvRepository.l
 export async function criarPedidoPdv(input:CreatePdvOrderInput){ return pdvRepository.createOrder({hotelId:input.hotelId,source:canonicalSource(input.origem),roomId:input.quartoId,deviceId:input.deviceId,priority:input.priority,chargeToRoom:input.chargeToRoom??canonicalSource(input.origem)!=='POS',idempotencyKey:input.idempotencyKey,items:input.itens}); }
 export async function finalizarPedidoPdv(orderId:string,paymentMethod?:string|null,cashSessionId?:string|null){ return pdvRepository.finalizeOrder(orderId,paymentMethod,cashSessionId); }
 export async function atualizarStatusKds(itemId:string,status:string){ return pdvRepository.updateKdsItem(itemId,status); }
-export async function listarKds(sector?:string){ return pdvRepository.listKds(sector); }
+export async function listarKds(hotelId:string,sector?:string){ return pdvRepository.listKds(hotelId,sector); }
 export async function abrirCaixa(cashRegisterId:string,openingAmount:number){ return pdvRepository.openCash(cashRegisterId,openingAmount); }
 export async function fecharCaixa(sessionId:string,actualCash:number){ return pdvRepository.closeCash(sessionId,actualCash); }
