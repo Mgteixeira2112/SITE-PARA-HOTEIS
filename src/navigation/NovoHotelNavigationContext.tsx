@@ -37,9 +37,13 @@ export const NovoHotelNavigationProvider: React.FC<{ children: React.ReactNode }
 
   const navigateToRoute = useCallback((routeId: NovoHotelRouteId) => {
     const compatibilityTab = getCompatibilityTabForNovoHotelRoute(routeId);
-    if (!compatibilityTab) return false;
+
     setActiveRouteId(routeId);
-    setAdminActiveTab(compatibilityTab as AdminTab);
+
+    if (compatibilityTab) {
+      setAdminActiveTab(compatibilityTab as AdminTab);
+    }
+
     return true;
   }, [setAdminActiveTab]);
 
