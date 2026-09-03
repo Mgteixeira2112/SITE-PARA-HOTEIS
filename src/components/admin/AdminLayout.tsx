@@ -98,10 +98,11 @@ export const AdminLayout: React.FC = () => {
     const routeItems = NOVOHOTEL_ROUTES
       .map<NavItemConfig | null>(route => {
         const compatibilityTab = getCompatibilityTabForNovoHotelRoute(route.id);
-        if (!compatibilityTab) return null;
+        const isDirectRouteReady = route.id === 'manutencao';
+        if (!compatibilityTab && !isDirectRouteReady) return null;
         return {
           id: route.id,
-          compatibilityTab,
+          compatibilityTab: compatibilityTab || activeTab,
           path: route.path,
           context: route.group,
           label: route.label,
@@ -130,7 +131,7 @@ export const AdminLayout: React.FC = () => {
     });
 
     return routeItems;
-  }, [checkinsTodayCount, activeUsersCount]);
+  }, [checkinsTodayCount, activeUsersCount, activeTab]);
 
   const contexts: { id: NavContextId; label: string; icon: React.FC<{ className?: string }> }[] = [
     { id: 'operacao', label: 'Operação', icon: Layers },
