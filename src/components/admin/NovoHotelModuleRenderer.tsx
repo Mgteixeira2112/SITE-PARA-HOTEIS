@@ -11,6 +11,7 @@ import { GuestsModule } from './GuestsModule';
 import { HotelOSCommandCenter } from './HotelOSCommandCenter';
 import { KDSPage } from './KDSPage';
 import { KanbanWorkspaceModule } from './KanbanWorkspaceModule';
+import { MaintenanceModule } from './MaintenanceModule';
 import { PDVPage } from './PDVPage';
 import { ReservationsModule } from './ReservationsModule';
 import { RoomsModule } from './RoomsModule';
@@ -43,6 +44,7 @@ export const NovoHotelModuleRenderer: React.FC<NovoHotelModuleRendererProps> = (
     {routeId === 'recepcao' && <CheckInOutModule />}
     {routeId === 'quartos' && <RoomsModule />}
     {routeId === 'hospedes' && <GuestsModule />}
+    {routeId === 'manutencao' && <MaintenanceModule />}
     {routeId === 'financeiro' && <FinancialModule />}
     {routeId === 'frigobar' && <FrigobarModule />}
     {routeId === 'automacoes' && <AutomationModule />}
