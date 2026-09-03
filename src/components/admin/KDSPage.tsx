@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { listarKds, atualizarStatusKds } from '../../services/pdvService';
 import { subscribeToKdsRealtime } from '../../core/realtime';
+import { useNovoHotelTenant } from '../../tenant/NovoHotelTenantContext';
 
 type Status =
   | 'CREATED'
@@ -49,22 +50,33 @@ const elapsed = (iso: string) => {
 };
 
 export const KDSPage: React.FC = () => {
+  const { tenant, loading: tenantLoading } = useNovoHotelTenant();
+  const hotelId = tenant?.hotelId || '';
   const [rows, setRows] = useState<KdsRow[]>([]);
   const [sector, setSector] = useState('COZINHA');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    if (!hotelId) {
+      setRows([]);
+      return;
+    }
     try {
-      const data = (await listarKds(sector)) as unknown as KdsRow[];
+      const data = (await listarKds(hotelId, sector)) as unknown as KdsRow[];
       setRows(data || []);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Falha no KDS');
     }
-  }, [sector]);
+  }, [hotelId, sector]);
 
   useEffect(() => {
+    if (!hotelId) {
+      setLoading(tenantLoading);
+      return;
+    }
+
     let mounted = true;
     setLoading(true);
     void load().finally(() => {
@@ -81,7 +93,7 @@ export const KDSPage: React.FC = () => {
       mounted = false;
       unsubscribe();
     };
-  }, [load, sector]);
+  }, [hotelId, load, sector, tenantLoading]);
 
   const active = useMemo(
     () => rows.filter((r) => !['COMPLETED', 'CANCELLED'].includes(r.status)).length,
@@ -89,7 +101,7 @@ export const KDSPage: React.FC = () => {
   );
 
   const advance = async (r: KdsRow, next?: Status) => {
-    if (!next) return;
+    if (!next || !hotelId) return;
     try {
       await atualizarStatusKds(r.id, next);
       await load();
@@ -130,6 +142,11 @@ export const KDSPage: React.FC = () => {
             <span className="rounded-full bg-stone-800 px-3 py-2 text-sm">{active} itens ativos</span>
           </div>
         </header>
+        {!tenantLoading && !hotelId && (
+          <div className="mb-4 rounded-xl border border-amber-800 bg-amber-950 p-3 text-sm text-amber-200">
+            Nenhum hotel ativo disponível para o KDS.
+          </div>
+        )}
         {error && (
           <div className="mb-4 rounded-xl border border-red-800 bg-red-950 p-3 text-sm text-red-200">
             {error}
