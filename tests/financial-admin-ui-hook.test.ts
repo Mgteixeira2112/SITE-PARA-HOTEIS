@@ -4,8 +4,10 @@ import test from 'node:test';
 
 const source = readFileSync('src/components/admin/financial/useAdministrativeFinanceUi.ts', 'utf8');
 
-test('hook financeiro administrativo usa somente identidade e serviços oficiais', () => {
-  assert.match(source, /hotelIdentityService\.getActiveHotelId/);
+test('hook financeiro administrativo usa tenant compartilhado e serviços oficiais', () => {
+  assert.match(source, /useNovoHotelTenant/);
+  assert.match(source, /tenant\?\.hotelId/);
+  assert.doesNotMatch(source, /hotelIdentityService\.getActiveHotelId/);
   assert.match(source, /loadAdministrativeFinanceUiSnapshot/);
   assert.match(source, /settleFinancialAccount/);
   assert.match(source, /RECEIVABLE/);

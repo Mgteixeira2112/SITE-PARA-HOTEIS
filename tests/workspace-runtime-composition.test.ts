@@ -6,15 +6,17 @@ const runtimeSource = readFileSync('src/workspace-engine/WorkspaceRuntime.tsx', 
 const canvasSource = readFileSync('src/workspace-engine/WidgetDrivenWorkspace.tsx', 'utf8');
 const catalogSource = readFileSync('src/workspace-engine/widgetCatalog.ts', 'utf8');
 const appSource = readFileSync('src/App.tsx', 'utf8');
+const compatibilitySource = readFileSync('src/workspace-engine/WorkspaceCompatibilityFallback.tsx', 'utf8');
 const editorSource = readFileSync('src/components/admin/WorkspaceEditorModule.tsx', 'utf8');
 const storeSource = readFileSync('src/workspace-engine/workspaceConfigStore.ts', 'utf8');
 
-test('WorkspaceRuntime usa sempre o canvas dirigido pela composição de widgets', () => {
+test('WorkspaceRuntime preserva a apresentação aprovada da Recepção e usa canvas dirigido por widgets nas demais áreas', () => {
   assert.match(runtimeSource, /<WidgetDrivenWorkspace definition=\{definition\}/);
+  assert.match(runtimeSource, /<ReceptionWorkspaceShared definition=\{definition\}/);
+  assert.match(runtimeSource, /definition\.sectors\.includes\('recepcao'\)/);
   assert.doesNotMatch(runtimeSource, /getWorkspaceAdapter/);
   assert.doesNotMatch(runtimeSource, /GenericOperationalWorkspace/);
   assert.doesNotMatch(runtimeSource, /GovernancaWorkspace/);
-  assert.doesNotMatch(runtimeSource, /ReceptionWorkspaceShared/);
 });
 
 test('canvas renderiza somente widgets ativos, visíveis e na ordem da apresentação resolvida', () => {
@@ -32,10 +34,14 @@ test('normalização preserva widgets desativados, apresentação e ordem config
   assert.match(catalogSource, /sort\(\(a, b\) => \(a\.order \?\? 0\) - \(b\.order \?\? 0\)\)/);
 });
 
-test('roteador operacional reage às alterações salvas pela Fábrica', () => {
-  assert.match(appSource, /subscribeWorkspaceConfig/);
-  assert.match(appSource, /setWorkspaceRevision\(current => current \+ 1\)/);
-  assert.match(appSource, /resolveWorkspaceForSectors\(sectorIds, hotelId\)/);
+test('router NovoHotel mantém a Fábrica confinada ao fallback de compatibilidade', () => {
+  assert.match(appSource, /<WorkspaceCompatibilityFallback/);
+  assert.doesNotMatch(appSource, /subscribeWorkspaceConfig/);
+  assert.doesNotMatch(appSource, /resolveWorkspaceForUserAndSectors/);
+  assert.match(compatibilitySource, /subscribeWorkspaceConfig/);
+  assert.match(compatibilitySource, /setRevision\(current => current \+ 1\)/);
+  assert.match(compatibilitySource, /resolveWorkspaceForUserAndSectors\(userId, sectorIds, hotelId\)/);
+  assert.match(compatibilitySource, /<WorkspaceRuntime definition=\{workspace\}/);
 });
 
 test('Fábrica altera composição e persistência dispara atualização do runtime', () => {

@@ -30,11 +30,11 @@ test('biblioteca visível registra apenas widgets canônicos para compor workspa
   }
 });
 
-test('biblioteca classifica disponibilidade e maturidade por setor', () => {
+test('biblioteca classifica disponibilidade e maturidade sem restringir composição funcional por setor', () => {
   assert.deepEqual(getWidgetAvailability('task-kanban', 'cozinha'), { allowed: true, readiness: 'ready', reason: '' });
-  assert.equal(getWidgetAvailability('room-map', 'cozinha').allowed, false);
+  assert.equal(getWidgetAvailability('room-map', 'cozinha').allowed, true);
   assert.equal(getWidgetAvailability('arrivals', 'recepcao').allowed, true);
-  assert.equal(getWidgetAvailability('arrivals', 'governanca').allowed, false);
+  assert.equal(getWidgetAvailability('arrivals', 'governanca').allowed, true);
   assert.deepEqual(getWidgetAvailability('orders', 'cozinha'), {
     allowed: false,
     readiness: 'planned',
@@ -79,10 +79,9 @@ test('rejeita widget que exige board sem boardId', () => {
     description: '',
     sectors: ['governanca'],
     layout: 'operational',
-    defaultScope: 'mine',
-    widgets: [{ id: 'kanban', type: 'task-kanban' }],
+    defaultScope: 'sector',
+    widgets: [{ id: 'kanban', type: 'task-kanban', order: 10, span: 'full' }],
   });
-
   assert.equal(result.valid, false);
   assert.match(result.errors.join(' '), /boardId/);
 });

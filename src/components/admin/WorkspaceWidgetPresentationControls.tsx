@@ -5,7 +5,6 @@ import {
   WorkspaceDevicePresentationMode,
   WorkspaceWidgetDefinition,
   WorkspaceWidgetDevicePresentation,
-  WorkspaceWidgetDisplay,
   WorkspaceWidgetDisplayMode,
   WorkspaceWidgetHeaderStyle,
   WorkspaceWidgetHeight,
@@ -71,6 +70,10 @@ export const WorkspaceWidgetPresentationControls: React.FC<WorkspaceWidgetPresen
       <p className="mt-1 text-[9px] text-stone-400">Base visual compartilhada pelas estratégias. Overrides específicos continuam separados por dispositivo.</p>
       <div className="mt-2 grid sm:grid-cols-2 gap-3">
         <label className={labelClass}>EXIBIÇÃO<select value={presentation.desktop?.displayMode || (presentation.display === 'button' ? 'button' : 'full')} onChange={e => onChange({ presentation: { ...presentation, desktop: { ...(presentation.desktop || {}), displayMode: e.target.value as WorkspaceWidgetDisplayMode } } })} className={selectClass}><option value="full">Completo</option><option value="summary">Resumo</option><option value="shortcut">Atalho</option><option value="button">Botão</option><option value="hidden">Oculto</option></select></label>
+        <label className={labelClass}>LARGURA<select value={presentation.width} onChange={e => onChange({ presentation: { ...presentation, width: e.target.value as WorkspaceWidgetWidth } })} className={selectClass}>{widthOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+        <label className={labelClass}>ALTURA<select value={presentation.height} onChange={e => onChange({ presentation: { ...presentation, height: e.target.value as WorkspaceWidgetHeight } })} className={selectClass}>{heightOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+        <label className={labelClass}>VISUAL<select value={presentation.visual} onChange={e => onChange({ presentation: { ...presentation, visual: e.target.value as WorkspaceWidgetVisualStyle } })} className={selectClass}>{visualOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+        <label className={labelClass}>CABEÇALHO<select value={presentation.header} onChange={e => onChange({ presentation: { ...presentation, header: e.target.value as WorkspaceWidgetHeaderStyle } })} className={selectClass}>{headerOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
       </div>
       <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
         {(['tablet', 'mobile', 'kds'] as const).map(device => <label key={device} className={labelClass}>{device === 'kds' ? 'KDS / TV' : device.toUpperCase()}<select value={presentation[device]?.displayMode || 'full'} onChange={e => updateDevice(device, { displayMode: e.target.value as WorkspaceWidgetDisplayMode, hidden: e.target.value === 'hidden' })} className={selectClass}><option value="full">Completo</option><option value="summary">Resumo</option><option value="shortcut">Atalho</option><option value="button">Botão</option><option value="hidden">Oculto</option></select></label>)}

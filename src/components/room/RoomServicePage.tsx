@@ -8,14 +8,18 @@ type CartItem = { produto_id:string; nome:string; quantidade:number; preco_unita
 export const RoomServicePage:React.FC<{hotelId?:string;quartoId?:string}> = ({hotelId,quartoId})=>{
  const [products,setProducts]=useState<Product[]>([]); const [cart,setCart]=useState<CartItem[]>([]); const [loading,setLoading]=useState(false); const [message,setMessage]=useState('');
   React.useEffect(() => {
+    if (!hotelId) {
+      setProducts([]);
+      return;
+    }
     let mounted = true;
-    listarProdutosPdv().then(result => {
+    listarProdutosPdv(hotelId).then(result => {
       if (mounted) setProducts(result);
     });
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [hotelId]);
  const total=useMemo(()=>cart.reduce((s,i)=>s+i.preco_unitario*i.quantidade,0),[cart]);
  const add=(p:Product)=>setCart(c=>{const f=c.find(i=>i.produto_id===p.id);return f?c.map(i=>i.produto_id===p.id?{...i,quantidade:i.quantidade+1}:i):[...c,{produto_id:p.id,nome:p.nome,quantidade:1,preco_unitario:p.preco}]});
  const send=async()=>{if(!hotelId||!quartoId||!cart.length){setMessage('Quarto ou itens inválidos.');return}setLoading(true);setMessage('');try{await criarPedidoPdv({hotelId,origem:'ROOM_SERVICE',quartoId,idempotencyKey:crypto.randomUUID(),itens:cart.map(i=>({produto_id:i.produto_id,quantidade:i.quantidade})),chargeToRoom:true});setCart([]);setMessage('Pedido enviado para preparação.');}catch(e){setMessage(e instanceof Error?e.message:'Não foi possível enviar o pedido.')}finally{setLoading(false)}};

@@ -22,6 +22,7 @@ import {
 import { getOperationalTodayStr } from '../../utils/dateHelper';
 import { UserProfileModal } from '../admin/UserProfileModal';
 import { getTheme, getFontFamilyClass } from '../../utils/themeHelper';
+import { useNovoHotelNavigation } from '../../navigation/useNovoHotelNavigation';
 
 // Componente de cabeçalho superior do painel administrativo PMS integrado com a paleta de cores do hotel
 export const AdminHeader: React.FC = () => {
@@ -34,11 +35,11 @@ export const AdminHeader: React.FC = () => {
     reservations,
     rooms,
     logout,
-    setAdminActiveTab,
     supabaseStatus,
     supabaseLatency,
     lastSyncTime
   } = useHotel();
+  const { navigateToRoute } = useNovoHotelNavigation();
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -82,7 +83,7 @@ export const AdminHeader: React.FC = () => {
 
   return (
     <>
-      <header className="bg-stone-900 text-stone-100 border-b border-stone-800 sticky top-0 z-30 shadow-md">
+      <header className="bg-stone-950/95 text-stone-100 border-b border-stone-800/80 sticky top-0 z-30 shadow-sm backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             
@@ -94,43 +95,43 @@ export const AdminHeader: React.FC = () => {
                     src={hotelConfig.logo_url}
                     alt={hotelConfig.nome}
                     referrerPolicy="no-referrer"
-                    className={`w-9 h-9 rounded-lg object-cover border ${theme.primaryBorder}`}
+                    className={`w-9 h-9 rounded-xl object-cover border ${theme.primaryBorder}`}
                   />
                 ) : (
-                  <div className={`w-9 h-9 rounded-lg ${theme.badgeClass} flex items-center justify-center font-black shadow-sm`}>
+                  <div className={`w-9 h-9 rounded-xl ${theme.badgeClass} flex items-center justify-center font-black shadow-sm`}>
                     <span className={`${fontClass} text-xs tracking-tighter font-black`}>
                       {getInitials(hotelConfig.nome)}
                     </span>
                   </div>
                 )}
-                <div className="hidden sm:block">
-                  <span className={`${fontClass} text-sm font-bold ${theme.textAccentClass} block leading-none`}>
+                <div className="hidden sm:block min-w-0">
+                  <span className={`${fontClass} text-sm font-bold text-white block leading-none truncate`}>
                     {hotelConfig.nome}
                   </span>
-                  <span className="text-[10px] text-stone-400 uppercase tracking-wider">
-                    PMS • Portal Administrativo
+                  <span className="text-[10px] text-stone-400 uppercase tracking-[0.16em]">
+                    NovoHotel SaaS • Operação do hotel
                   </span>
                 </div>
               </div>
 
               {/* Indicador de ocupação em tempo real */}
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-stone-800/80 border border-stone-700 text-xs text-stone-300">
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-stone-900 border border-stone-800 text-xs text-stone-300">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Ocupação: <strong className="text-white">{occupancyRate}%</strong> ({occupiedRooms}/{totalRooms})</span>
+                <span>Hoje · Ocupação <strong className="text-white">{occupancyRate}%</strong> <span className="text-stone-500">({occupiedRooms}/{totalRooms})</span></span>
               </div>
 
               {/* Indicador de Status do Banco de Dados Supabase */}
               <button
-                onClick={() => setAdminActiveTab('settings')}
-                className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-750 border border-stone-700 text-[11px] transition cursor-pointer"
+                onClick={() => navigateToRoute('configuracoes')}
+                className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-900 hover:bg-stone-800 border border-stone-800 text-[11px] transition cursor-pointer"
                 title={`Supabase Cloud DB: ${supabaseStatus} ${supabaseLatency ? `(${supabaseLatency}ms)` : ''} ${lastSyncTime ? `| Última sinc: ${lastSyncTime}` : ''}`}
               >
                 {supabaseStatus === 'connected' ? (
                   <>
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
                     <Database className="w-3 h-3 text-emerald-400" />
-                    <span className="text-emerald-300 font-medium">Supabase Conectado</span>
-                    {supabaseLatency && <span className="text-[9px] text-stone-400">{supabaseLatency}ms</span>}
+                    <span className="text-emerald-300 font-medium">Dados online</span>
+                    {supabaseLatency && <span className="text-[9px] text-stone-500">{supabaseLatency}ms</span>}
                   </>
                 ) : supabaseStatus === 'syncing' ? (
                   <>
@@ -142,13 +143,13 @@ export const AdminHeader: React.FC = () => {
                   <>
                     <span className="w-2 h-2 rounded-full bg-amber-400" />
                     <Database className="w-3 h-3 text-amber-400" />
-                    <span className="text-amber-300 font-medium">Supabase (SQL pendente)</span>
+                    <span className="text-amber-300 font-medium">Configuração pendente</span>
                   </>
                 ) : (
                   <>
                     <span className="w-2 h-2 rounded-full bg-amber-500" />
                     <Database className="w-3 h-3 text-amber-400" />
-                    <span className="text-amber-300 font-medium">Modo Demo / Local</span>
+                    <span className="text-amber-300 font-medium">Modo local</span>
                   </>
                 )}
               </button>
@@ -160,32 +161,36 @@ export const AdminHeader: React.FC = () => {
               {/* Botão dinâmico com o sistema de cores do site */}
               <button
                 onClick={() => setCurrentView('landing')}
-                className={`px-3.5 py-1.5 rounded-xl ${theme.buttonClass} text-xs font-bold flex items-center gap-2 transition-all cursor-pointer transform active:scale-95 shadow-md`}
+                className={`px-3.5 py-1.5 rounded-xl ${theme.buttonClass} text-xs font-bold flex items-center gap-2 transition-all cursor-pointer active:scale-95 shadow-sm`}
                 title="Visualizar o site oficial como o cliente/hóspede vê"
               >
                 <Eye className="w-4 h-4" />
-                <span className="font-bold">Ver Site Oficial</span>
-                <ExternalLink className="w-3 h-3 opacity-75" />
+                <span className="font-bold hidden sm:inline">Visualizar site</span>
+                <ExternalLink className="w-3 h-3 opacity-75 hidden sm:block" />
               </button>
 
               {/* Indicador de notificações de chegadas do dia com cor do tema */}
-              <div 
-                onClick={() => setAdminActiveTab('checkin_out')}
-                className="relative p-2 text-stone-400 hover:text-white transition cursor-pointer"
+              <button
+                type="button"
+                onClick={() => navigateToRoute('recepcao')}
+                className="relative p-2 text-stone-400 hover:text-white transition cursor-pointer rounded-lg hover:bg-stone-900"
                 title={`${checkinsToday} check-ins previstos para hoje`}
+                aria-label={`${checkinsToday} check-ins previstos para hoje`}
               >
                 <Bell className="w-4 h-4" />
                 {checkinsToday > 0 && (
-                  <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${theme.primary} ring-2 ring-stone-900 animate-pulse`} />
+                  <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${theme.primary} ring-2 ring-stone-950 animate-pulse`} />
                 )}
-              </div>
+              </button>
 
               {/* Perfil do Usuário Logado e Menu Suspenso */}
               <div className="relative pl-2 border-l border-stone-800">
                 
                 <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-stone-800 transition cursor-pointer text-left"
+                  className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-stone-900 transition cursor-pointer text-left"
+                  aria-expanded={isMenuOpen}
+                  aria-label="Abrir menu do usuário"
                 >
                   <div className={`w-8 h-8 rounded-full overflow-hidden border ${theme.primaryBorder} bg-stone-800 flex-shrink-0`}>
                     <img
@@ -210,7 +215,7 @@ export const AdminHeader: React.FC = () => {
                 {/* Dropdown de opções do usuário logado */}
                 {isMenuOpen && (
                   <div 
-                    className="absolute right-0 mt-2 w-64 bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl py-2 z-50 text-xs animate-in fade-in"
+                    className="absolute right-0 mt-2 w-64 bg-stone-950 border border-stone-800 rounded-2xl shadow-2xl py-2 z-50 text-xs animate-in fade-in"
                     onMouseLeave={() => setIsMenuOpen(false)}
                   >
                     
@@ -229,7 +234,7 @@ export const AdminHeader: React.FC = () => {
                         setIsMenuOpen(false);
                         setIsProfileModalOpen(true);
                       }}
-                      className="w-full px-4 py-2 text-left text-stone-300 hover:text-white hover:bg-stone-800 flex items-center gap-2.5 transition cursor-pointer"
+                      className="w-full px-4 py-2 text-left text-stone-300 hover:text-white hover:bg-stone-900 flex items-center gap-2.5 transition cursor-pointer"
                     >
                       <User className={`w-4 h-4 ${theme.textAccentClass}`} />
                       <span>Meu Perfil & Senha</span>
@@ -239,9 +244,9 @@ export const AdminHeader: React.FC = () => {
                       <button
                         onClick={() => {
                           setIsMenuOpen(false);
-                          setAdminActiveTab('users');
+                          navigateToRoute('equipe');
                         }}
-                        className="w-full px-4 py-2 text-left text-stone-300 hover:text-white hover:bg-stone-800 flex items-center gap-2.5 transition cursor-pointer"
+                        className="w-full px-4 py-2 text-left text-stone-300 hover:text-white hover:bg-stone-900 flex items-center gap-2.5 transition cursor-pointer"
                       >
                         <Users className={`w-4 h-4 ${theme.textAccentClass}`} />
                         <span>Gestão de Usuários & Permissões</span>
@@ -251,9 +256,9 @@ export const AdminHeader: React.FC = () => {
                     <button
                       onClick={() => {
                         setIsMenuOpen(false);
-                        setAdminActiveTab('settings');
+                        navigateToRoute('configuracoes');
                       }}
-                      className="w-full px-4 py-2 text-left text-stone-300 hover:text-white hover:bg-stone-800 flex items-center gap-2.5 transition cursor-pointer"
+                      className="w-full px-4 py-2 text-left text-stone-300 hover:text-white hover:bg-stone-900 flex items-center gap-2.5 transition cursor-pointer"
                     >
                       <Palette className={`w-4 h-4 ${theme.textAccentClass}`} />
                       <span>Identidade Visual & Cores</span>
@@ -261,7 +266,7 @@ export const AdminHeader: React.FC = () => {
 
                     {/* Alternador Rápido de Perfil para Demonstração */}
                     <div className="px-4 py-2 border-t border-stone-800 mt-1">
-                      <span className={`text-[10px] text-stone-500 uppercase font-bold tracking-wider block mb-1.5 flex items-center gap-1`}>
+                      <span className="text-[10px] text-stone-500 uppercase font-bold tracking-wider block mb-1.5 flex items-center gap-1">
                         <Sparkles className={`w-3 h-3 ${theme.textAccentClass}`} />
                         Trocar Usuário (Demo):
                       </span>

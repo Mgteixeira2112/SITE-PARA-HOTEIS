@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BedDouble, PackageCheck, RefreshCw, ShoppingCart, Warehouse } from 'lucide-react';
+import { BedDouble, RefreshCw, ShoppingCart, Warehouse } from 'lucide-react';
 import { useHotel } from '../../context/HotelContext';
 import {
   frigobarCore,
   type MinibarRestockSource,
   type MinibarRoomSnapshot,
 } from '../../frigobar-core';
+import { useNovoHotelTenant } from '../../tenant/NovoHotelTenantContext';
+import { SectionTitle } from '../common/DesignSystem';
 
 const money = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0));
@@ -14,8 +16,9 @@ const operationKey = (prefix: string) =>
   `${prefix}:${typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
 
 export const FrigobarModule: React.FC = () => {
-  const { hotelConfig, rooms, reservations, guests } = useHotel();
-  const hotelId = hotelConfig.id || '';
+  const { rooms, reservations, guests } = useHotel();
+  const { tenant, loading: tenantLoading } = useNovoHotelTenant();
+  const hotelId = tenant?.hotelId || '';
   const activeReservations = useMemo(
     () => reservations.filter(item => item.status === 'checkin_realizado' && item.quarto_id),
     [reservations],
@@ -115,17 +118,12 @@ export const FrigobarModule: React.FC = () => {
 
   return (
     <div className="space-y-5 p-1">
-      <header className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-cyan-50 text-cyan-700"><PackageCheck className="h-5 w-5" /></span>
-            <div>
-              <h1 className="text-lg font-black text-slate-900">Frigobar operacional</h1>
-              <p className="text-xs text-slate-500">Supabase · Inventory Core · cobrança via Financial Engine</p>
-            </div>
-          </div>
+      <SectionTitle
+        title="Frigobar operacional"
+        description="Supabase · Inventory Core · cobrança via Financial Engine"
+        actions={(
           <div className="flex min-w-0 gap-2">
-            <select value={roomId} onChange={event => setRoomId(event.target.value)} className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 lg:min-w-72">
+            <select value={roomId} onChange={event => setRoomId(event.target.value)} className="min-w-0 flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 lg:min-w-72">
               <option value="">Selecione uma hospedagem ativa</option>
               {activeReservations.map(item => {
                 const itemRoom = rooms.find(candidate => candidate.id === item.quarto_id);
@@ -133,14 +131,14 @@ export const FrigobarModule: React.FC = () => {
                 return <option key={item.id} value={item.quarto_id}>Q. {itemRoom?.numero || '—'} · {itemGuest?.nome || item.codigo || item.id}</option>;
               })}
             </select>
-            <button type="button" onClick={() => void load()} disabled={loading || !roomId} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-600 disabled:opacity-40" title="Atualizar">
+            <button type="button" onClick={() => void load()} disabled={loading || !roomId} className="grid h-10 w-10 place-items-center rounded-xl border border-stone-200 text-stone-600 disabled:opacity-40" title="Atualizar">
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
-        </div>
-      </header>
+        )}
+      />
 
-      {!hotelId && <div className="rounded-2xl bg-amber-50 p-4 text-xs font-bold text-amber-800">O hotel ativo ainda não possui ID Supabase disponível. Sincronize a configuração antes de operar o Frigobar.</div>}
+      {!tenantLoading && !hotelId && <div className="rounded-2xl bg-amber-50 p-4 text-xs font-bold text-amber-800">O hotel ativo ainda não possui ID Supabase disponível. Sincronize a configuração antes de operar o Frigobar.</div>}
       {!activeReservations.length && <div className="rounded-2xl bg-slate-50 p-8 text-center text-sm text-slate-500">Nenhuma hospedagem ativa para operação de Frigobar.</div>}
       {error && <div className="rounded-2xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</div>}
       {notice && <div className="rounded-2xl bg-emerald-50 p-3 text-xs font-bold text-emerald-700">{notice}</div>}

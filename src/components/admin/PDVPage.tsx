@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useHotel } from '../../context/HotelContext';
+import { useNovoHotelTenant } from '../../tenant/NovoHotelTenantContext';
 import { criarPedidoPdv, finalizarPedidoPdv, listarCaixas, listarProdutosPdv, listarSessoesCaixa, abrirCaixa, PdvProduct } from '../../services/pdvService';
+import { SectionTitle } from '../common/DesignSystem';
 
 type CartItem = PdvProduct & { quantidade: number };
 const money = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -14,7 +16,9 @@ const methods = [
 ] as const;
 
 export const PDVPage: React.FC = () => {
-  const { hotelConfig, rooms } = useHotel();
+  const { rooms } = useHotel();
+  const { tenant, loading: tenantLoading } = useNovoHotelTenant();
+  const hotelId = tenant?.hotelId || '';
   const [products, setProducts] = useState<PdvProduct[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [category, setCategory] = useState('Todos');
@@ -30,12 +34,19 @@ export const PDVPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hotelConfig?.id) return;
+    if (!hotelId) {
+      setProducts([]);
+      setRegisters([]);
+      setSessions([]);
+      setLoading(tenantLoading);
+      return;
+    }
     let active = true;
+    setLoading(true);
     Promise.all([
-      listarProdutosPdv(),
-      listarCaixas(String(hotelConfig.id)),
-      listarSessoesCaixa(String(hotelConfig.id))
+      listarProdutosPdv(hotelId),
+      listarCaixas(hotelId),
+      listarSessoesCaixa(hotelId)
     ])
       .then(([p, r, s]) => {
         if (!active) return;
@@ -52,7 +63,7 @@ export const PDVPage: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [hotelConfig?.id]);
+  }, [hotelId, tenantLoading]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -97,7 +108,7 @@ export const PDVPage: React.FC = () => {
     });
 
   const submit = async () => {
-    if (!hotelConfig?.id || !cart.length || sending) return;
+    if (!hotelId || !cart.length || sending) return;
     const selected = mode === 'quarto' ? rooms.find(r => String(r.numero) === room.trim()) : undefined;
     if (mode === 'quarto' && !selected) {
       setError('Informe um quarto válido.');
@@ -112,7 +123,7 @@ export const PDVPage: React.FC = () => {
     setMessage(null);
     try {
       const id = await criarPedidoPdv({
-        hotelId: String(hotelConfig.id),
+        hotelId,
         origem: mode,
         quartoId: selected?.id ? String(selected.id) : null,
         idempotencyKey: crypto.randomUUID(),
@@ -130,13 +141,17 @@ export const PDVPage: React.FC = () => {
   };
 
   const openCash = async () => {
+    if (!hotelId) {
+      setError('Hotel ativo não identificado.');
+      return;
+    }
     if (!registers[0]) {
       setError('Nenhum caixa cadastrado para este hotel.');
       return;
     }
     try {
       await abrirCaixa(registers[0].id, 0);
-      const s = await listarSessoesCaixa(String(hotelConfig?.id));
+      const s = await listarSessoesCaixa(hotelId);
       setSessions(s as Array<{ id: string; cash_register_id: string }>);
       setMessage('Caixa aberto.');
     } catch (e) {
@@ -147,31 +162,33 @@ export const PDVPage: React.FC = () => {
   return (
     <div className="min-h-full bg-stone-100 p-3 text-stone-900 md:p-6">
       <div className="mx-auto max-w-7xl">
-        <header className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Hotel OS</p>
-            <h1 className="text-2xl font-black">PDV + Room Service</h1>
-            <p className="mt-1 text-[11px] text-stone-500">F2 pesquisar · F8 finalizar · ESC limpar</p>
-          </div>
-          <div className="flex gap-2 rounded-xl bg-white p-1 shadow-sm">
-            <button
-              onClick={() => setMode('balcao')}
-              className={`touch-target rounded-lg px-4 py-2 text-sm font-bold ${
-                mode === 'balcao' ? 'bg-stone-900 text-white' : ''
-              }`}
-            >
-              Balcão
-            </button>
-            <button
-              onClick={() => setMode('quarto')}
-              className={`touch-target rounded-lg px-4 py-2 text-sm font-bold ${
-                mode === 'quarto' ? 'bg-stone-900 text-white' : ''
-              }`}
-            >
-              Quarto
-            </button>
-          </div>
-        </header>
+        <SectionTitle
+          title="PDV + Room Service"
+          description="Venda no balcão ou lançamento direto no quarto · F2 pesquisar · F8 finalizar · ESC limpar"
+          className="mb-5"
+          actions={(
+            <div className="flex gap-2 rounded-xl border border-stone-200 bg-white p-1 shadow-xs">
+              <button
+                type="button"
+                onClick={() => setMode('balcao')}
+                className={`touch-target rounded-lg px-4 py-2 text-sm font-bold transition ${
+                  mode === 'balcao' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'
+                }`}
+              >
+                Balcão
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('quarto')}
+                className={`touch-target rounded-lg px-4 py-2 text-sm font-bold transition ${
+                  mode === 'quarto' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'
+                }`}
+              >
+                Quarto
+              </button>
+            </div>
+          )}
+        />
 
         {mode === 'quarto' && (
           <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -341,4 +358,3 @@ export const PDVPage: React.FC = () => {
     </div>
   );
 };
-

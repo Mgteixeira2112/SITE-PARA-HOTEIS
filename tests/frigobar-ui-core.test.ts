@@ -17,6 +17,14 @@ test('FrigobarModule usa exclusivamente a API pública do Frigobar Core', () => 
   assert.doesNotMatch(module, /supabase\.from|supabase\.rpc/);
 });
 
+test('FrigobarModule usa o tenant compartilhado como identidade do hotel', () => {
+  const module = read('src/components/admin/FrigobarModule.tsx');
+
+  assert.match(module, /useNovoHotelTenant/);
+  assert.match(module, /tenant\?\.hotelId/);
+  assert.doesNotMatch(module, /hotelConfig\.id|hotelIdentityService|getActiveHotelId/);
+});
+
 test('consumo e reposição permanecem operações distintas', () => {
   const module = read('src/components/admin/FrigobarModule.tsx');
   const core = read('src/frigobar-core/frigobarCore.ts');

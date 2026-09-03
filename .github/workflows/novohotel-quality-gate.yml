@@ -1,0 +1,30 @@
+name: NovoHotel Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - name: Test
+        shell: bash
+        run: |
+          set -o pipefail
+          bun run test 2>&1 | tee test-output.log
+      - name: Upload test output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: novohotel-test-output
+          path: test-output.log
+      - run: bun run build
+      - run: bun run audit:production

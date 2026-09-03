@@ -1,9 +1,13 @@
 # GitHub Pages must be configured in Settings > Pages with Source = GitHub Actions.
+# The transformation branch is intentionally published as the live homologation environment
+# so visual/operational changes can be tested continuously without touching the NOVOHOTEL repo.
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - refactor/novohotel-saas-simplificado
   workflow_dispatch:
 
 permissions:
@@ -36,11 +40,16 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Create cache-bypass homologation entry
+        run: cp dist/index.html dist/homologacao.html
+
       - name: Verify build output
         run: |
           test -f dist/index.html
+          test -f dist/homologacao.html
           test -f dist/manifest.webmanifest
           grep -q '/SITE-PARA-HOTEIS/assets/' dist/index.html
+          grep -q '/SITE-PARA-HOTEIS/assets/' dist/homologacao.html
           ! grep -q 'src="/src/main.tsx"' dist/index.html
           find dist -maxdepth 2 -type f | sort | head -100
 
@@ -51,7 +60,7 @@ jobs:
 
   deploy:
     environment:
-      name: github-pages
+      name: homologacao
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build

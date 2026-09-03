@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle, Inbox, Loader2, RefreshCw } from 'lucide-react';
+import { Button, Card } from './DesignSystem';
 
 export interface EmptyStateProps {
   icon?: React.FC<{ className?: string }>;
@@ -19,23 +20,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   className = '',
 }) => {
   return (
-    <div
-      className={`bg-white rounded-2xl border border-stone-200 p-8 sm:p-12 text-center max-w-lg mx-auto my-6 shadow-xs ${className}`}
-    >
-      <div className="w-12 h-12 rounded-xl bg-stone-100 text-stone-500 flex items-center justify-center mx-auto mb-4 border border-stone-200">
-        <Icon className="w-6 h-6" />
+    <Card padding="lg" className={`mx-auto my-6 max-w-lg text-center ${className}`}>
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-stone-200 bg-stone-100 text-stone-500">
+        <Icon className="h-6 w-6" />
       </div>
-      <h3 className="font-bold text-base text-stone-900 mb-1">{title}</h3>
-      <p className="text-xs text-stone-500 leading-relaxed mb-6">{description}</p>
-      {actionLabel && onAction && (
-        <button
-          onClick={onAction}
-          className="px-4 py-2 bg-stone-900 text-white rounded-xl text-xs font-bold hover:bg-stone-800 transition cursor-pointer"
-        >
-          {actionLabel}
-        </button>
-      )}
-    </div>
+      <h3 className="mb-1 text-base font-bold text-stone-900">{title}</h3>
+      <p className="mb-6 text-xs leading-relaxed text-stone-500">{description}</p>
+      {actionLabel && onAction && <Button onClick={onAction}>{actionLabel}</Button>}
+    </Card>
   );
 };
 
@@ -49,12 +41,12 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   className = '',
 }) => {
   return (
-    <div
-      className={`bg-white rounded-2xl border border-stone-200 p-12 text-center flex flex-col items-center justify-center gap-3 shadow-xs ${className}`}
-    >
-      <Loader2 className="w-6 h-6 text-stone-600 animate-spin" />
-      <span className="text-xs font-medium text-stone-500">{message}</span>
-    </div>
+    <Card padding="lg" className={`flex flex-col items-center justify-center gap-3 text-center ${className}`}>
+      <Loader2 className="h-6 w-6 animate-spin text-stone-600" aria-hidden="true" />
+      <span className="text-xs font-medium text-stone-500" role="status" aria-live="polite">
+        {message}
+      </span>
+    </Card>
   );
 };
 
@@ -72,26 +64,21 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   className = '',
 }) => {
   return (
-    <div
-      className={`bg-rose-50/70 rounded-2xl border border-rose-200 p-6 text-rose-900 shadow-xs ${className}`}
-    >
+    <Card tone="danger" padding="md" className={className} role="alert">
       <div className="flex items-start gap-3">
-        <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" aria-hidden="true" />
         <div className="flex-1 space-y-1">
-          <div className="font-bold text-xs uppercase tracking-wider">{title}</div>
-          <p className="text-xs text-rose-800 leading-relaxed">{message}</p>
+          <div className="text-xs font-bold uppercase tracking-wider">{title}</div>
+          <p className="text-xs leading-relaxed text-rose-800">{message}</p>
         </div>
         {onRetry && (
-          <button
-            onClick={onRetry}
-            className="px-3 py-1.5 bg-rose-900 text-white rounded-lg text-xs font-bold hover:bg-rose-800 transition flex items-center gap-1.5 cursor-pointer"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
+          <Button variant="danger" size="sm" onClick={onRetry}>
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Tentar novamente</span>
-          </button>
+          </Button>
         )}
       </div>
-    </div>
+    </Card>
   );
 };
 
@@ -117,36 +104,40 @@ export const StatSummaryCard: React.FC<StatSummaryCardProps> = ({
   onClick,
   isActive,
 }) => {
-  return (
-    <div
-      onClick={onClick}
-      className={`bg-white rounded-2xl border p-4 shadow-xs transition ${
-        onClick ? 'cursor-pointer hover:border-stone-400' : ''
-      } ${isActive ? 'border-stone-900 ring-2 ring-stone-900/10' : 'border-stone-200'}`}
+  const card = (
+    <Card
+      padding="sm"
+      className={`w-full text-left transition ${
+        onClick ? 'hover:border-stone-400' : ''
+      } ${isActive ? 'border-stone-900 ring-2 ring-stone-900/10' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] uppercase tracking-wider font-bold text-stone-500">{label}</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">{label}</span>
         {icon && (
-          <span className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center text-stone-600">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-stone-100 text-stone-600">
             {icon}
           </span>
         )}
       </div>
-      <div className="mt-2.5 text-2xl font-black text-stone-900 tracking-tight">{value}</div>
+      <div className="mt-2.5 text-2xl font-black tracking-tight text-stone-900">{value}</div>
       {(hint || trend) && (
         <div className="mt-1 flex items-center justify-between text-[11px] text-stone-500">
           {hint && <span>{hint}</span>}
           {trend && (
-            <span
-              className={`font-bold ${
-                trend.isPositive ? 'text-emerald-700' : 'text-rose-700'
-              }`}
-            >
+            <span className={`font-bold ${trend.isPositive ? 'text-emerald-700' : 'text-rose-700'}`}>
               {trend.value}
             </span>
           )}
         </div>
       )}
-    </div>
+    </Card>
+  );
+
+  if (!onClick) return card;
+
+  return (
+    <button type="button" onClick={onClick} className="block w-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-offset-2">
+      {card}
+    </button>
   );
 };

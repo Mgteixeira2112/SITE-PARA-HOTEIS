@@ -2,6 +2,7 @@ import React from 'react';
 import { getWorkspaceDeviceMode } from '../../workspace-engine/presentation';
 import { WORKSPACE_BACKGROUND_PRESETS } from '../../workspace-engine/workspaceVisualPresets';
 import {
+  WorkspaceBackgroundFit,
   WorkspaceBackgroundPresetId,
   WorkspaceDefinition,
   WorkspaceDevicePresentationMode,
@@ -41,8 +42,11 @@ export const WorkspaceGeneralPresentationControls: React.FC<WorkspaceGeneralPres
 
     <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/30 p-4" data-workspace-surface-controls>
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[9px] font-black uppercase tracking-wider text-amber-700">Fundo</p><p className="mt-1 text-[10px] text-stone-500">O fundo compõe a identidade visual; widgets seguem uma grade automática.</p></div></div>
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <label className="text-xs font-bold text-stone-600">Fundo<select value={surface.backgroundPreset || 'none'} onChange={e => updateSurface({ backgroundPreset: e.target.value as WorkspaceBackgroundPresetId })} className={fieldClass}>{WORKSPACE_BACKGROUND_PRESETS.map(preset => <option key={preset.id} value={preset.id}>{preset.label}</option>)}</select></label>
+        <label className="text-xs font-bold text-stone-600">Encaixe<select value={surface.backgroundFit || 'cover'} onChange={e => updateSurface({ backgroundFit: e.target.value as WorkspaceBackgroundFit })} className={fieldClass}><option value="cover">Cobrir</option><option value="contain">Conter</option></select></label>
+        <label className="text-xs font-bold text-stone-600">Posição<select value={surface.backgroundPosition || 'center'} onChange={e => updateSurface({ backgroundPosition: e.target.value as 'center' | 'top' | 'bottom' })} className={fieldClass}><option value="center">Centro</option><option value="top">Topo</option><option value="bottom">Base</option></select></label>
+        <label className="text-xs font-bold text-stone-600">Altura mínima<input type="number" min={480} step={20} value={surface.minHeight || 760} onChange={e => updateSurface({ minHeight: Number(e.target.value) || 760 })} className={fieldClass} /></label>
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">{WORKSPACE_BACKGROUND_PRESETS.map(preset => <button key={preset.id} type="button" onClick={() => updateSurface({ backgroundPreset: preset.id })} className={`rounded-xl border p-2 text-left transition ${(surface.backgroundPreset || 'none') === preset.id ? 'border-amber-400 bg-white shadow-sm' : 'border-stone-200 bg-white/60 hover:border-amber-300'}`} aria-pressed={(surface.backgroundPreset || 'none') === preset.id}><span className="block h-12 rounded-lg border border-black/5" style={{ backgroundColor: preset.backgroundColor, backgroundImage: preset.backgroundImage, backgroundSize: 'cover' }} /><strong className="mt-2 block text-[10px] text-stone-800">{preset.label}</strong><span className="mt-0.5 block text-[9px] leading-relaxed text-stone-500">{preset.description}</span></button>)}</div>
     </div>
