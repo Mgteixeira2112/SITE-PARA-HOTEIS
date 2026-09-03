@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useId } from 'react';
 
 export type SurfaceTone = 'default' | 'muted' | 'success' | 'warning' | 'info' | 'danger';
 
@@ -95,3 +95,69 @@ export const SectionTitle: React.FC<SectionTitleProps> = ({ title, description, 
     {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
   </div>
 );
+
+export interface ModalProps {
+  open: boolean;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  onClose: () => void;
+  size?: 'sm' | 'md' | 'lg';
+  closeLabel?: string;
+}
+
+const modalSizeClasses: Record<NonNullable<ModalProps['size']>, string> = {
+  sm: 'max-w-md',
+  md: 'max-w-2xl',
+  lg: 'max-w-4xl',
+};
+
+export const Modal: React.FC<ModalProps> = ({
+  open,
+  title,
+  description,
+  children,
+  footer,
+  onClose,
+  size = 'md',
+  closeLabel = 'Fechar',
+}) => {
+  const titleId = useId();
+  const descriptionId = useId();
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-stone-950/75 p-4 backdrop-blur-sm">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
+        className={`flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl ${modalSizeClasses[size]}`}
+      >
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-stone-100 px-6 py-5">
+          <div className="min-w-0">
+            <h2 id={titleId} className="text-lg font-bold tracking-tight text-stone-900">{title}</h2>
+            {description && <p id={descriptionId} className="mt-1 text-sm text-stone-500">{description}</p>}
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={closeLabel}>
+            ×
+          </Button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        {footer && <div className="shrink-0 border-t border-stone-100 px-6 py-4">{footer}</div>}
+      </div>
+    </div>
+  );
+};
